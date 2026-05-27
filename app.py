@@ -6,34 +6,39 @@ from supabase import create_client, Client
 # Configuração da página
 st.set_page_config(page_title="EA FC - Nikolas vs Rodrigo", page_icon="🎮", layout="wide")
 
+# Inicializa o estado de autenticação
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
 # ==============================================================================
-# TRAVA DE SEGURANÇA (SENHA)
+# CABEÇALHO E LOGIN (Canto Superior Direito)
 # ==============================================================================
-def verificar_senha():
-    if "autenticado" not in st.session_state:
-        st.session_state["autenticado"] = False
+col_title, col_login = st.columns([5, 1])
 
-    if st.session_state["autenticado"]:
-        return True
+with col_title:
+    st.title("🎮 Arena EA FC - Nikolas vs Rodrigo")
 
-    _, col_login, _ = st.columns([1, 2, 1])
-    with col_login:
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.subheader("🔒 Acesso Restrito - Arena EA FC")
-        st.write("Digite a senha para liberar o painel de estatísticas.")
-        
-        senha_digitada = st.text_input("Senha:", type="password", label_visibility="collapsed")
-        
-        if st.button("Entrar no Painel ➡️", use_container_width=True):
-            if senha_digitada == st.secrets["APP_PASSWORD"]:
-                st.session_state["autenticado"] = True
-                st.rerun()
-            else:
-                st.error("Senha incorreta! Tente novamente.")
-    return False
+with col_login:
+    # Espaçamento para alinhar o botão de login com o título
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    
+    if not st.session_state["autenticado"]:
+        # Popover que imita o menu dropdown da sua imagem
+        with st.popover("🔐 Acesso Restrito", use_container_width=True):
+            senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
+            if st.button("Entrar", use_container_width=True):
+                if senha_digitada == st.secrets["APP_PASSWORD"]:
+                    st.session_state["autenticado"] = True
+                    st.rerun()
+                else:
+                    st.error("Incorreta!")
+    else:
+        # Botão de Logout se já estiver autenticado
+        if st.button("🔓 Sair do Painel", use_container_width=True):
+            st.session_state["autenticado"] = False
+            st.rerun()
 
-if not verificar_senha():
-    st.stop()
+st.markdown("---")
 
 # ==============================================================================
 # CONEXÃO COM SUPABASE
@@ -267,13 +272,20 @@ def calcular_estatisticas(df):
     }
 
 # ==============================================================================
-# INTERFACE PRINCIPAL
+# ABAS DINÂMICAS BASEADAS NA AUTENTICAÇÃO
 # ==============================================================================
 df_partidas = ler_partidas()
 
-tab1, tab2, tab3 = st.tabs(["📊 Dashboard Geral", "📝 Registrar Partida", "📜 Histórico de Jogos"])
+# Se autenticado, mostra as 3 abas. Se não, mostra só 2.
+if st.session_state["autenticado"]:
+    tabs = st.tabs(["📊 Dashboard Geral", "📝 Registrar Partida", "📜 Histórico de Jogos"])
+    tab1, tab2, tab3 = tabs[0], tabs[1], tabs[2]
+else:
+    tabs = st.tabs(["📊 Dashboard Geral", "📜 Histórico de Jogos"])
+    tab1, tab3 = tabs[0], tabs[1]
+    tab2 = None
 
-# ----------------- TAB 1: DASHBOARD -----------------
+# ----------------- TAB 1: DASHBOARD (Público) -----------------
 with tab1:
     if not df_partidas.empty:
         versoes_cadastradas = sorted(df_partidas['versao_jogo'].unique().tolist())
@@ -378,73 +390,74 @@ with tab1:
     else:
         st.info("Aguardando o primeiro jogo para gerar estatísticas.")
 
-# ----------------- TAB 2: REGISTRAR -----------------
-with tab2:
-    st.subheader("Registrar Novo Confronto")
-    
-    mando = st.radio("Mando de Campo:", ["Nikolas em Casa", "Rodrigo em Casa"], horizontal=True)
-    jogador_casa = "Nikolas" if mando == "Nikolas em Casa" else "Rodrigo"
-    jogador_fora = "Rodrigo" if mando == "Nikolas em Casa" else "Nikolas"
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # --- Identificação dinâmica do índice para o Real Madrid e FC Barcelona ---
-    lista_de_times = list(TEAMS.keys())
-    
-    try: idx_real_madrid = lista_de_times.index("Real Madrid")
-    except ValueError: idx_real_madrid = 0
+# ----------------- TAB 2: REGISTRAR (Restrito) -----------------
+if tab2:
+    with tab2:
+        st.subheader("Registrar Novo Confronto")
         
-    try: idx_barcelona = lista_de_times.index("FC Barcelona")
-    except ValueError: idx_barcelona = 0
-
-    # Lógica: Onde Nikolas estiver, o padrão é Real Madrid. Onde Rodrigo estiver, o padrão é FC Barcelona.
-    idx_padrao_casa = idx_real_madrid if jogador_casa == "Nikolas" else idx_barcelona
-    idx_padrao_fora = idx_real_madrid if jogador_fora == "Nikolas" else idx_barcelona
-    
-    col_c, col_d, col_f = st.columns([2, 1, 2])
-    
-    with col_c:
-        st.markdown(f"### 🏠 Casa ({jogador_casa})")
-        t_c = st.selectbox("Time", lista_de_times, index=idx_padrao_casa, key="tc")
-        st.markdown(f'''
-            <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-                <img src="{TEAMS[t_c]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
-            </div>
-        ''', unsafe_allow_html=True)
-        g_c = st.number_input("Gols do Casa", min_value=0, value=0, key="gc")
-
-    with col_d:
-        st.markdown("<div style='text-align: center; font-size: 14px; margin-bottom: 5px;'>Data do Jogo</div>", unsafe_allow_html=True)
-        d_j = st.date_input("Data", datetime.date.today(), format="DD/MM/YYYY", label_visibility="collapsed")
+        mando = st.radio("Mando de Campo:", ["Nikolas em Casa", "Rodrigo em Casa"], horizontal=True)
+        jogador_casa = "Nikolas" if mando == "Nikolas em Casa" else "Rodrigo"
+        jogador_fora = "Rodrigo" if mando == "Nikolas em Casa" else "Nikolas"
         
-        st.markdown("<div style='text-align: center; font-size: 14px; margin-top: 15px; margin-bottom: 5px;'>Edição</div>", unsafe_allow_html=True)
-        v_jogo = st.selectbox("Versão", VERSOES, label_visibility="collapsed")
+        st.markdown("<br>", unsafe_allow_html=True)
         
-    with col_f:
-        st.markdown(f"### 🚀 Fora ({jogador_fora})")
-        t_f = st.selectbox("Time ", lista_de_times, index=idx_padrao_fora, key="tf")
-        st.markdown(f'''
-            <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-                <img src="{TEAMS[t_f]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
-            </div>
-        ''', unsafe_allow_html=True)
-        g_f = st.number_input("Gols do Fora", min_value=0, value=0, key="gf")
+        # --- Identificação dinâmica do índice para o Real Madrid e FC Barcelona ---
+        lista_de_times = list(TEAMS.keys())
+        
+        try: idx_real_madrid = lista_de_times.index("Real Madrid")
+        except ValueError: idx_real_madrid = 0
+            
+        try: idx_barcelona = lista_de_times.index("FC Barcelona")
+        except ValueError: idx_barcelona = 0
 
-    foi_p, venc_p = "Não", ""
-    if g_c == g_f:
-        st.info("Houve disputa de pênaltis?")
-        teve_p = st.checkbox("Sim")
-        if teve_p:
-            foi_p = "Sim"
-            venc_p = st.radio("Quem levou nos pênaltis?", [jogador_casa, jogador_fora])
+        # Onde Nikolas estiver, o padrão é Real Madrid. Onde Rodrigo estiver, o padrão é FC Barcelona.
+        idx_padrao_casa = idx_real_madrid if jogador_casa == "Nikolas" else idx_barcelona
+        idx_padrao_fora = idx_real_madrid if jogador_fora == "Nikolas" else idx_barcelona
+        
+        col_c, col_d, col_f = st.columns([2, 1, 2])
+        
+        with col_c:
+            st.markdown(f"### 🏠 Casa ({jogador_casa})")
+            t_c = st.selectbox("Time", lista_de_times, index=idx_padrao_casa, key="tc")
+            st.markdown(f'''
+                <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
+                    <img src="{TEAMS[t_c]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
+                </div>
+            ''', unsafe_allow_html=True)
+            g_c = st.number_input("Gols do Casa", min_value=0, value=0, key="gc")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("Salvar Partida 💾", use_container_width=True):
-        salvar_partida(v_jogo, str(d_j), jogador_casa, t_c, int(g_c), jogador_fora, int(g_f), t_f, foi_p, venc_p)
-        st.success("Gravado!")
-        st.rerun()
+        with col_d:
+            st.markdown("<div style='text-align: center; font-size: 14px; margin-bottom: 5px;'>Data do Jogo</div>", unsafe_allow_html=True)
+            d_j = st.date_input("Data", datetime.date.today(), format="DD/MM/YYYY", label_visibility="collapsed")
+            
+            st.markdown("<div style='text-align: center; font-size: 14px; margin-top: 15px; margin-bottom: 5px;'>Edição</div>", unsafe_allow_html=True)
+            v_jogo = st.selectbox("Versão", VERSOES, label_visibility="collapsed")
+            
+        with col_f:
+            st.markdown(f"### 🚀 Fora ({jogador_fora})")
+            t_f = st.selectbox("Time ", lista_de_times, index=idx_padrao_fora, key="tf")
+            st.markdown(f'''
+                <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
+                    <img src="{TEAMS[t_f]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
+                </div>
+            ''', unsafe_allow_html=True)
+            g_f = st.number_input("Gols do Fora", min_value=0, value=0, key="gf")
 
-# ----------------- TAB 3: HISTÓRICO -----------------
+        foi_p, venc_p = "Não", ""
+        if g_c == g_f:
+            st.info("Houve disputa de pênaltis?")
+            teve_p = st.checkbox("Sim")
+            if teve_p:
+                foi_p = "Sim"
+                venc_p = st.radio("Quem levou nos pênaltis?", [jogador_casa, jogador_fora])
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Salvar Partida 💾", use_container_width=True):
+            salvar_partida(v_jogo, str(d_j), jogador_casa, t_c, int(g_c), jogador_fora, int(g_f), t_f, foi_p, venc_p)
+            st.success("Gravado!")
+            st.rerun()
+
+# ----------------- TAB 3: HISTÓRICO (Híbrido) -----------------
 with tab3:
     st.subheader("📜 Histórico de Jogos")
     
@@ -519,10 +532,12 @@ with tab3:
                         )
                         
                     with c_del:
-                        st.markdown("<style>div.stButton > button {margin-top: 10px;}</style>", unsafe_allow_html=True)
-                        if st.button("🗑️", key=f"del_{row['id']}"):
-                            excluir_partida(row['id'])
-                            st.rerun()
+                        # O BOTÃO DE LIXEIRA SÓ APARECE SE ESTIVER AUTENTICADO
+                        if st.session_state["autenticado"]:
+                            st.markdown("<style>div.stButton > button {margin-top: 10px;}</style>", unsafe_allow_html=True)
+                            if st.button("🗑️", key=f"del_{row['id']}"):
+                                excluir_partida(row['id'])
+                                st.rerun()
         else:
             st.warning("Nenhum jogo encontrado para o período selecionado.")
     else:
