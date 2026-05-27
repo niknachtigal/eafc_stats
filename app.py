@@ -4,7 +4,7 @@ import datetime
 from supabase import create_client, Client
 
 # Configuração da página
-st.set_page_config(page_title="EA FC - Nikolas vs Rodrigo", page_icon="🎮", layout="wide")
+st.set_page_config(page_title="FIFA - Nikolas vs Rodrigo", page_icon="🎮", layout="wide")
 
 # Inicializa o estado de autenticação
 if "autenticado" not in st.session_state:
@@ -223,7 +223,7 @@ TEAMS = {
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
-VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30", "EA FC 24", "EA FC 25", "EA FC 26"]
+VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30""]
 
 # ==============================================================================
 # LÓGICA DE VITÓRIAS E SEQUÊNCIAS
