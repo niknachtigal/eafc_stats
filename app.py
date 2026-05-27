@@ -7,6 +7,35 @@ from supabase import create_client, Client
 st.set_page_config(page_title="EA FC - Nikolas vs Rodrigo", page_icon="🎮", layout="wide")
 
 # ==============================================================================
+# TRAVA DE SEGURANÇA (SENHA)
+# ==============================================================================
+def verificar_senha():
+    if "autenticado" not in st.session_state:
+        st.session_state["autenticado"] = False
+
+    if st.session_state["autenticado"]:
+        return True
+
+    _, col_login, _ = st.columns([1, 2, 1])
+    with col_login:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.subheader("🔒 Acesso Restrito - Arena EA FC")
+        st.write("Digite a senha para liberar o painel de estatísticas.")
+        
+        senha_digitada = st.text_input("Senha:", type="password", label_visibility="collapsed")
+        
+        if st.button("Entrar no Painel ➡️", use_container_width=True):
+            if senha_digitada == st.secrets["APP_PASSWORD"]:
+                st.session_state["autenticado"] = True
+                st.rerun()
+            else:
+                st.error("Senha incorreta! Tente novamente.")
+    return False
+
+if not verificar_senha():
+    st.stop()
+
+# ==============================================================================
 # CONEXÃO COM SUPABASE
 # ==============================================================================
 @st.cache_resource
@@ -40,11 +69,10 @@ def ler_partidas():
     if response.data:
         return pd.DataFrame(response.data)
     else:
-        # Retorna um DataFrame vazio com as colunas corretas se não houver jogos
         return pd.DataFrame(columns=["id", "versao_jogo", "data", "jogador_casa", "time_casa", "gols_casa", "jogador_fora", "gols_fora", "time_fora", "foi_penaltis", "vencedor_penaltis"])
 
 # ==============================================================================
-# DICIONÁRIO DE TIMES E LOGOS (Linha por linha)
+# DICIONÁRIO DE TIMES E LOGOS
 # ==============================================================================
 TEAMS = {
     # Premier League
@@ -165,7 +193,7 @@ TEAMS = {
     "PSV Eindhoven": "https://crests.football-data.org/682.png",
     "Twente": "https://crests.football-data.org/666.png",
 
-    # Outros do Mundo / Arábia / MLS / Argentina
+    # Outros
     "Al Ahli": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b5/Al-Ahli_Saudi_FC_logo.svg/200px-Al-Ahli_Saudi_FC_logo.svg.png",
     "Al Hilal": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Al_Hilal_SFC_Logo.svg/120px-Al_Hilal_SFC_Logo.svg.png",
     "Al Ittihad": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a3/Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg/200px-Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg.png",
@@ -177,8 +205,6 @@ TEAMS = {
     "Los Angeles FC": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Los_Angeles_FC_logo.svg/200px-Los_Angeles_FC_logo.svg.png",
     "Galatasaray": "https://crests.football-data.org/611.png",
     "Fenerbahçe": "https://crests.football-data.org/610.png",
-
-    #SELEÇÕES
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
 }
 TEAMS = dict(sorted(TEAMS.items()))
@@ -241,13 +267,11 @@ def calcular_estatisticas(df):
     }
 
 # ==============================================================================
-# INTERFACE
+# INTERFACE PRINCIPAL
 # ==============================================================================
-st.title("🎮 Arena EA FC - Nikolas vs Rodrigo")
-st.markdown("---")
+df_partidas = ler_partidas()
 
 tab1, tab2, tab3 = st.tabs(["📊 Dashboard Geral", "📝 Registrar Partida", "📜 Histórico de Jogos"])
-df_partidas = ler_partidas()
 
 # ----------------- TAB 1: DASHBOARD -----------------
 with tab1:
@@ -257,7 +281,7 @@ with tab1:
         
         col_filtro, _ = st.columns([1, 4])
         with col_filtro:
-            filtro_selecionado = st.selectbox("", opcoes_filtro)
+            filtro_selecionado = st.selectbox("Edição:", opcoes_filtro, label_visibility="collapsed")
             
         st.markdown("<br>", unsafe_allow_html=True)
             
@@ -364,17 +388,30 @@ with tab2:
     
     st.markdown("<br>", unsafe_allow_html=True)
     
+    # --- Identificação dinâmica do índice para o Real Madrid e FC Barcelona ---
+    lista_de_times = list(TEAMS.keys())
+    
+    try: idx_real_madrid = lista_de_times.index("Real Madrid")
+    except ValueError: idx_real_madrid = 0
+        
+    try: idx_barcelona = lista_de_times.index("FC Barcelona")
+    except ValueError: idx_barcelona = 0
+
+    # Lógica: Onde Nikolas estiver, o padrão é Real Madrid. Onde Rodrigo estiver, o padrão é FC Barcelona.
+    idx_padrao_casa = idx_real_madrid if jogador_casa == "Nikolas" else idx_barcelona
+    idx_padrao_fora = idx_real_madrid if jogador_fora == "Nikolas" else idx_barcelona
+    
     col_c, col_d, col_f = st.columns([2, 1, 2])
     
     with col_c:
         st.markdown(f"### 🏠 Casa ({jogador_casa})")
-        t_c = st.selectbox("Time", list(TEAMS.keys()), key="tc")
+        t_c = st.selectbox("Time", lista_de_times, index=idx_padrao_casa, key="tc")
         st.markdown(f'''
             <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
                 <img src="{TEAMS[t_c]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
             </div>
         ''', unsafe_allow_html=True)
-        g_c = st.number_input("Gols", min_value=0, value=0, key="gc")
+        g_c = st.number_input("Gols do Casa", min_value=0, value=0, key="gc")
 
     with col_d:
         st.markdown("<div style='text-align: center; font-size: 14px; margin-bottom: 5px;'>Data do Jogo</div>", unsafe_allow_html=True)
@@ -385,13 +422,13 @@ with tab2:
         
     with col_f:
         st.markdown(f"### 🚀 Fora ({jogador_fora})")
-        t_f = st.selectbox("Time ", list(TEAMS.keys()), key="tf")
+        t_f = st.selectbox("Time ", lista_de_times, index=idx_padrao_fora, key="tf")
         st.markdown(f'''
             <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
                 <img src="{TEAMS[t_f]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
             </div>
         ''', unsafe_allow_html=True)
-        g_f = st.number_input("Gols", min_value=0, value=0, key="gf")
+        g_f = st.number_input("Gols do Fora", min_value=0, value=0, key="gf")
 
     foi_p, venc_p = "Não", ""
     if g_c == g_f:
