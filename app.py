@@ -202,7 +202,7 @@ TEAMS = {
     "Al Ahli": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b5/Al-Ahli_Saudi_FC_logo.svg/200px-Al-Ahli_Saudi_FC_logo.svg.png",
     "Al Hilal": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Al_Hilal_SFC_Logo.svg/120px-Al_Hilal_SFC_Logo.svg.png",
     "Al Ittihad": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a3/Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg/200px-Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg.png",
-    "Al Nassr": "https://upload.wikimedia.org/wikipedia/pt/thumb/2/26/Al-Nassr_FC.png/250px-Al-Nassr_FC.png",
+    "Al Nassr": "https://upload.wikimedia.org/wikipedia/en/3/3f/Nassr_FC_Logo.svg",
     "Boca Juniors": "https://crests.football-data.org/1127.png",
     "River Plate": "https://crests.football-data.org/1128.png",
     "Inter Miami CF": "https://upload.wikimedia.org/wikipedia/pt/thumb/c/c1/Inter_Miami_CF.png/250px-Inter_Miami_CF.png",
