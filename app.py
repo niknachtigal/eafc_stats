@@ -536,7 +536,7 @@ with tab3:
                         tf = row['time_fora']
                         st.markdown(
                             f"<div style='display: flex; align-items: center; justify-content: flex-start; gap: 15px; height: 100%; margin-top: 10px;'>"
-                            f"<img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>"
+                            f"<img src='{TEAMS.get(tf)}' style='width: 30px; height: 30px; object-fit: contain;'>"
                             f"<span style='font-size: 16px; font-weight: bold;'>({tf}) {row['jogador_fora']}</span>"
                             f"</div>", 
                             unsafe_allow_html=True
