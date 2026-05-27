@@ -4,7 +4,7 @@ import datetime
 from supabase import create_client, Client
 
 # Configuração da página
-st.set_page_config(page_title="FIFA - Nikolas vs Rodrigo", page_icon="🎮", layout="wide")
+st.set_page_config(page_title="FIFA - Nik vs Digo", page_icon="🎮", layout="wide")
 
 # Inicializa o estado de autenticação
 if "autenticado" not in st.session_state:
@@ -325,7 +325,7 @@ with tab1:
                 if stats['seq_at_q'] > 0:
                     st.info(f"🔵 **{stats['seq_at_p']}** venceu a(s) última(s) **{stats['seq_at_q']}** partida(s)!")
                 else:
-                    st.info(f"⚖️ Última partida foi {stats['seq_at_p']}")
+                    st.info(f"🔘 Última partida foi {stats['seq_at_p']}")
             
             with c_s2:
                 st.subheader("🏆 Recordes de Sequência")
@@ -362,7 +362,7 @@ with tab1:
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
                         f"<img src='{TEAMS.get(time)}' width='25' style='object-fit: contain;'>"
-                        f"<span><b>{time}</b> ({count} jogo(s))</span>"
+                        f"<span><b>{time}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
@@ -373,7 +373,7 @@ with tab1:
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
                         f"<img src='{TEAMS.get(time)}' width='25' style='object-fit: contain;'>"
-                        f"<span><b>{time}</b> ({count} jogo(s))</span>"
+                        f"<span><b>{time}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
