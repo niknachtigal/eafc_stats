@@ -212,8 +212,8 @@ TEAMS = {
     "Fenerbahçe": "https://crests.football-data.org/610.png",
     
     # Brasileiro
-    "Internacional":"https://logodetimes.com/times/internacional/logo-internacional-256.png"
-    "Grêmio":"https://logodetimes.com/times/gremio/logo-gremio-256.png"
+    "Internacional":"https://logodetimes.com/times/internacional/logo-internacional-256.png",
+    "Grêmio":"https://logodetimes.com/times/gremio/logo-gremio-256.png",
     
     # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
