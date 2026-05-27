@@ -213,12 +213,12 @@ TEAMS = {
     
     # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
-    "Brasil": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Brazilian_Football_Confederation_logo.svg/250px-Brazilian_Football_Confederation_logo.svg.png",
-    "Portugal": "https://upload.wikimedia.org/wikipedia/pt/thumb/7/75/Portugal_FPF.png/250px-Portugal_FPF.png",
-    "Argentina": "https://upload.wikimedia.org/wikipedia/pt/thumb/f/fc/230px-Afa_logo.svg.png/250px-230px-Afa_logo.svg.png",
-    "Alemanha": "https://upload.wikimedia.org/wikipedia/pt/thumb/a/a9/DFBEagle.png/250px-DFBEagle.png",
-    "Espanha": "https://upload.wikimedia.org/wikipedia/pt/3/31/Spain_National_Football_Team_badge.png",
-    "França": "https://upload.wikimedia.org/wikipedia/pt/thumb/f/fb/France_national_football_team_seal.png/120px-France_national_football_team_seal.png",    
+    "Brasil": "https://images.seeklogo.com/logo-png/27/1/cbf-confederacao-brasileira-de-futebol-logo-png_seeklogo-274350.png",
+    "Portugal": "https://logodownload.org/wp-content/uploads/2021/10/fpf-selecao-de-portugal-logo-0.png",
+    "Argentina": "https://logodownload.org/wp-content/uploads/2016/11/argentina-national-football-team-logo-1-1.png",
+    "Alemanha": "https://logodownload.org/wp-content/uploads/2018/06/germany-national-football-team-logo.png",
+    "Espanha": "https://logodownload.org/wp-content/uploads/2022/08/spain-national-football-team-logo-1.png",
+    "França": "https://upload.wikimedia.org/wikipedia/pt/2/25/Logo_Sele%C3%A7%C3%A3o_Francesa_2018.png",    
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
