@@ -219,11 +219,10 @@ TEAMS = {
     "Alemanha": "https://upload.wikimedia.org/wikipedia/pt/thumb/a/a9/DFBEagle.png/250px-DFBEagle.png",
     "Espanha": "https://upload.wikimedia.org/wikipedia/pt/3/31/Spain_National_Football_Team_badge.png",
     "França": "https://upload.wikimedia.org/wikipedia/pt/thumb/f/fb/France_national_football_team_seal.png/120px-France_national_football_team_seal.png",    
-    
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
-VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30"]
+VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30", "EA FC 24", "EA FC 25", "EA FC 26"]
 
 # ==============================================================================
 # LÓGICA DE VITÓRIAS E SEQUÊNCIAS
@@ -432,7 +431,7 @@ if tab2:
                     <img src="{TEAMS[t_c]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
                 </div>
             ''', unsafe_allow_html=True)
-            g_c = st.number_input("Gols", min_value=0, value=0, key="gc")
+            g_c = st.number_input("Gols do Casa", min_value=0, value=0, key="gc")
 
         with col_d:
             st.markdown("<div style='text-align: center; font-size: 14px; margin-bottom: 5px;'>Data do Jogo</div>", unsafe_allow_html=True)
@@ -449,7 +448,7 @@ if tab2:
                     <img src="{TEAMS[t_f]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
                 </div>
             ''', unsafe_allow_html=True)
-            g_f = st.number_input("Gols", min_value=0, value=0, key="gf")
+            g_f = st.number_input("Gols do Fora", min_value=0, value=0, key="gf")
 
         foi_p, venc_p = "Não", ""
         if g_c == g_f:
@@ -510,8 +509,6 @@ with tab3:
                     
                     with c_dt:
                         st.markdown(f"<p style='margin-top: 15px;'>📅 <b>{data_br}</b><br><small style='color: gray;'>🎮 {row['versao_jogo']}</small></p>", unsafe_allow_html=True)
-                        if row['foi_penaltis'] == "Sim":
-                            st.markdown(f"<p style='font-size:12px; color:gray; margin-top: -10px;'>🎯 Pênaltis: {row['vencedor_penaltis']}</p>", unsafe_allow_html=True)
                     
                     with c_casa:
                         tc = row['time_casa']
@@ -528,6 +525,8 @@ with tab3:
                             f"<h3 style='text-align: center; margin-top: 10px;'>{row['gols_casa']} x {row['gols_fora']}</h3>", 
                             unsafe_allow_html=True
                         )
+                        if row['foi_penaltis'] == "Sim":
+                            st.markdown(f"<p style='text-align:center; font-size:12px; color:gray; margin-top: -10px;'>🎯 Pênaltis: {row['vencedor_penaltis']}</p>", unsafe_allow_html=True)
                         
                     with c_fora:
                         tf = row['time_fora']
