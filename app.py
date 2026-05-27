@@ -213,8 +213,8 @@ TEAMS = {
     
     # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
-    "Brasil": "https://images.seeklogo.com/logo-png/27/1/cbf-confederacao-brasileira-de-futebol-logo-png_seeklogo-274350.png",
-    "Portugal": "https://logodownload.org/wp-content/uploads/2021/10/fpf-selecao-de-portugal-logo-0.png",
+    "Brasil": "https://images.vexels.com/media/users/3/152348/isolated/svg/e292f8cec7eae5f8f4f25bcc36cfe5f5.svg",
+    "Portugal": "https://vetores.org/wp-content/uploads/selecao-portuguesa-de-futebol.png",
     "Argentina": "https://logodownload.org/wp-content/uploads/2016/11/argentina-national-football-team-logo-1-1.png",
     "Alemanha": "https://logodownload.org/wp-content/uploads/2018/06/germany-national-football-team-logo.png",
     "Espanha": "https://logodownload.org/wp-content/uploads/2022/08/spain-national-football-team-logo-1.png",
