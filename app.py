@@ -211,14 +211,18 @@ TEAMS = {
     "Galatasaray": "https://crests.football-data.org/611.png",
     "Fenerbahçe": "https://crests.football-data.org/610.png",
     
+    # Brasileiro
+    "Internacional":"https://logodetimes.com/times/internacional/logo-internacional-256.png"
+    "Grêmio":"https://logodetimes.com/times/gremio/logo-gremio-256.png"
+    
     # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
-    "Brasil": "https://images.vexels.com/media/users/3/152348/isolated/svg/e292f8cec7eae5f8f4f25bcc36cfe5f5.svg",
+    "Brasil": "https://logodetimes.com/times/selecao-brasileira-brasil-novo-logo-2019-com-estrelas/logo-selecao-brasileira-brasil-novo-logo-2019-com-estrelas-256.png",
     "Portugal": "https://logodetimes.com/times/portugal/selecao-portuguesa-de-futebol-512.png",
-    "Argentina": "https://logodownload.org/wp-content/uploads/2016/11/argentina-national-football-team-logo-1-1.png",
-    "Alemanha": "https://logodownload.org/wp-content/uploads/2018/06/germany-national-football-team-logo.png",
-    "Espanha": "https://logodownload.org/wp-content/uploads/2022/08/spain-national-football-team-logo-1.png",
-    "França": "https://upload.wikimedia.org/wikipedia/pt/2/25/Logo_Sele%C3%A7%C3%A3o_Francesa_2018.png",    
+    "Argentina": "https://logodetimes.com/times/argentina/selecao-argentina-de-futebol-256.png",
+    "Alemanha": "https://logodetimes.com/times/alemanha/selecao-alema-de-futebol-256.png",
+    "Espanha": "https://logodetimes.com/times/espanha/selecao-espanhola-de-futebol-256.png",
+    "França": "https://logodetimes.com/times/franca/selecao-francesa-de-futebol-256.png",    
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
