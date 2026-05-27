@@ -223,7 +223,7 @@ TEAMS = {
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
-VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30""]
+VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30"]
 
 # ==============================================================================
 # LÓGICA DE VITÓRIAS E SEQUÊNCIAS
