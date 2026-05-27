@@ -212,17 +212,17 @@ TEAMS = {
     "Fenerbahçe": "https://crests.football-data.org/610.png",
     
     # Brasileiro
-    "Internacional":"https://logodetimes.com/times/internacional/logo-internacional-256.png",
+    "Internacional":"https://commons.wikimedia.org/wiki/File:Sport_Club_Internacional_logo.svg",
     "Grêmio":"https://logodetimes.com/times/gremio/logo-gremio-256.png",
     
     # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
     "Brasil": "https://logodetimes.com/times/selecao-brasileira-brasil-novo-logo-2019-com-estrelas/logo-selecao-brasileira-brasil-novo-logo-2019-com-estrelas-256.png",
-    "Portugal": "https://logodetimes.com/times/portugal/selecao-portuguesa-de-futebol-512.png",
+    "Portugal": "https://upload.wikimedia.org/wikipedia/pt/7/75/Portugal_FPF.png",
     "Argentina": "https://logodetimes.com/times/argentina/selecao-argentina-de-futebol-256.png",
     "Alemanha": "https://logodetimes.com/times/alemanha/selecao-alema-de-futebol-256.png",
-    "Espanha": "https://logodetimes.com/times/espanha/selecao-espanhola-de-futebol-256.png",
-    "França": "https://logodetimes.com/times/franca/selecao-francesa-de-futebol-256.png",    
+    "Espanha": "https://logodownload.org/wp-content/uploads/2022/08/spain-national-football-team-logo-0.png",
+    "França": "https://logodownload.org/wp-content/uploads/2022/07/france-national-football-team-logo.png",    
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
@@ -365,7 +365,7 @@ with tab1:
                 for time, count in stats['nik_top_teams'].items():
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
-                        f"<img src='{TEAMS.get(time)}' width='25' style='object-fit: contain;'>"
+                        f"<img src='{TEAMS.get(time)}' style='width: 25px; height: 25px; object-fit: contain;'>"
                         f"<span><b>{time}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
@@ -376,7 +376,7 @@ with tab1:
                 for time, count in stats['rod_top_teams'].items():
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
-                        f"<img src='{TEAMS.get(time)}' width='25' style='object-fit: contain;'>"
+                        f"<img src='{TEAMS.get(time)}' style='width: 25px; height: 25px; object-fit: contain;'>"
                         f"<span><b>{time}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
@@ -432,7 +432,7 @@ if tab2:
             t_c = st.selectbox("Time", lista_de_times, index=idx_padrao_casa, key="tc")
             st.markdown(f'''
                 <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-                    <img src="{TEAMS[t_c]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
+                    <img src="{TEAMS[t_c]}" style="width: 80px; height: 80px; object-fit: contain;">
                 </div>
             ''', unsafe_allow_html=True)
             g_c = st.number_input("Gols do Casa", min_value=0, value=0, key="gc")
@@ -449,7 +449,7 @@ if tab2:
             t_f = st.selectbox("Time ", lista_de_times, index=idx_padrao_fora, key="tf")
             st.markdown(f'''
                 <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-                    <img src="{TEAMS[t_f]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
+                    <img src="{TEAMS[t_c]}" style="width: 80px; height: 80px; object-fit: contain;">
                 </div>
             ''', unsafe_allow_html=True)
             g_f = st.number_input("Gols do Fora", min_value=0, value=0, key="gf")
@@ -519,7 +519,7 @@ with tab3:
                         st.markdown(
                             f"<div style='display: flex; align-items: center; justify-content: flex-end; gap: 15px; height: 100%; margin-top: 10px;'>"
                             f"<span style='font-size: 16px; font-weight: bold;'>{row['jogador_casa']} ({tc})</span>"
-                            f"<img src='{TEAMS.get(tc)}' width='30' style='object-fit: contain;'>"
+                            f"<img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>"
                             f"</div>", 
                             unsafe_allow_html=True
                         )
@@ -536,7 +536,7 @@ with tab3:
                         tf = row['time_fora']
                         st.markdown(
                             f"<div style='display: flex; align-items: center; justify-content: flex-start; gap: 15px; height: 100%; margin-top: 10px;'>"
-                            f"<img src='{TEAMS.get(tf)}' width='30' style='object-fit: contain;'>"
+                            f"<img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>"
                             f"<span style='font-size: 16px; font-weight: bold;'>({tf}) {row['jogador_fora']}</span>"
                             f"</div>", 
                             unsafe_allow_html=True
