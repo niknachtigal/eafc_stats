@@ -212,12 +212,12 @@ TEAMS = {
     "Fenerbahçe": "https://crests.football-data.org/610.png",
     
     # Brasileiro
-    "Internacional":"https://commons.wikimedia.org/wiki/File:Sport_Club_Internacional_logo.svg",
-    "Grêmio":"https://logodetimes.com/times/gremio/logo-gremio-256.png",
+    "Internacional":"https://logodetimes.com/times/internacional/logo-internacional-4096.png",
+    "Grêmio":"https://logodetimes.com/times/gremio/logo-gremio-4096.png",
     
     # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
-    "Brasil": "https://logodetimes.com/times/selecao-brasileira-brasil-novo-logo-2019-com-estrelas/logo-selecao-brasileira-brasil-novo-logo-2019-com-estrelas-256.png",
+    "Brasil": "https://logodetimes.com/times/selecao-brasileira-brasil-novo-logo-2019-com-estrelas-e-nome/logo-selecao-brasileira-brasil-novo-logo-2019-com-estrelas-e-nome-4096.png",
     "Portugal": "https://upload.wikimedia.org/wikipedia/pt/7/75/Portugal_FPF.png",
     "Argentina": "https://logodetimes.com/times/argentina/selecao-argentina-de-futebol-256.png",
     "Alemanha": "https://logodetimes.com/times/alemanha/selecao-alema-de-futebol-256.png",
