@@ -449,7 +449,7 @@ if tab2:
             t_f = st.selectbox("Time ", lista_de_times, index=idx_padrao_fora, key="tf")
             st.markdown(f'''
                 <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
-                    <img src="{TEAMS[t_c]}" style="width: 80px; height: 80px; object-fit: contain;">
+                    <img src="{TEAMS[t_f]}" style="width: 80px; height: 80px; object-fit: contain;">
                 </div>
             ''', unsafe_allow_html=True)
             g_f = st.number_input("Gols do Fora", min_value=0, value=0, key="gf")
