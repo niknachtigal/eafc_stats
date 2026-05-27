@@ -16,7 +16,7 @@ if "autenticado" not in st.session_state:
 col_title, col_login = st.columns([5, 1])
 
 with col_title:
-    st.title("🎮 Arena EA FC - Nikolas vs Rodrigo")
+    st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
 
 with col_login:
     # Espaçamento para alinhar o botão de login com o título
@@ -210,7 +210,16 @@ TEAMS = {
     "Los Angeles FC": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Los_Angeles_FC_logo.svg/200px-Los_Angeles_FC_logo.svg.png",
     "Galatasaray": "https://crests.football-data.org/611.png",
     "Fenerbahçe": "https://crests.football-data.org/610.png",
+    
+    # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
+    "Brasil": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Brazilian_Football_Confederation_logo.svg/250px-Brazilian_Football_Confederation_logo.svg.png",
+    "Portugal": "https://upload.wikimedia.org/wikipedia/pt/thumb/7/75/Portugal_FPF.png/250px-Portugal_FPF.png"
+    "Argentina": "https://pt.wikipedia.org/wiki/Ficheiro:230px-Afa_logo.svg.png"
+    "Alemanha": "https://upload.wikimedia.org/wikipedia/pt/thumb/a/a9/DFBEagle.png/250px-DFBEagle.png"
+    "Espanha": "https://upload.wikimedia.org/wikipedia/pt/3/31/Spain_National_Football_Team_badge.png"
+    "França": "https://upload.wikimedia.org/wikipedia/pt/thumb/f/fb/France_national_football_team_seal.png/120px-France_national_football_team_seal.png"    
+    
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
@@ -313,9 +322,9 @@ with tab1:
             
             c_s1, c_s2 = st.columns(2)
             with c_s1:
-                st.subheader("🔥 Sequência Atual")
+                st.subheader("➡️ Sequência Atual")
                 if stats['seq_at_q'] > 0:
-                    st.info(f"🚀 O Jogador **{stats['seq_at_p']}** venceu as últimas **{stats['seq_at_q']}** partidas!")
+                    st.info(f"🔵 **{stats['seq_at_p']}** venceu a(s) última(s) **{stats['seq_at_q']}** partida(s)!")
                 else:
                     st.info(f"⚖️ Última partida foi {stats['seq_at_p']}")
             
@@ -354,7 +363,7 @@ with tab1:
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
                         f"<img src='{TEAMS.get(time)}' width='25' style='object-fit: contain;'>"
-                        f"<span><b>{time}</b> ({count} jogos)</span>"
+                        f"<span><b>{time}</b> ({count} jogo(s))</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
@@ -365,7 +374,7 @@ with tab1:
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
                         f"<img src='{TEAMS.get(time)}' width='25' style='object-fit: contain;'>"
-                        f"<span><b>{time}</b> ({count} jogos)</span>"
+                        f"<span><b>{time}</b> ({count} jogo(s))</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
@@ -393,8 +402,7 @@ with tab1:
 # ----------------- TAB 2: REGISTRAR (Restrito) -----------------
 if tab2:
     with tab2:
-        st.subheader("Registrar Novo Confronto")
-        
+                
         mando = st.radio("Mando de Campo:", ["Nikolas em Casa", "Rodrigo em Casa"], horizontal=True)
         jogador_casa = "Nikolas" if mando == "Nikolas em Casa" else "Rodrigo"
         jogador_fora = "Rodrigo" if mando == "Nikolas em Casa" else "Nikolas"
@@ -424,7 +432,7 @@ if tab2:
                     <img src="{TEAMS[t_c]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
                 </div>
             ''', unsafe_allow_html=True)
-            g_c = st.number_input("Gols do Casa", min_value=0, value=0, key="gc")
+            g_c = st.number_input("Gols", min_value=0, value=0, key="gc")
 
         with col_d:
             st.markdown("<div style='text-align: center; font-size: 14px; margin-bottom: 5px;'>Data do Jogo</div>", unsafe_allow_html=True)
@@ -434,14 +442,14 @@ if tab2:
             v_jogo = st.selectbox("Versão", VERSOES, label_visibility="collapsed")
             
         with col_f:
-            st.markdown(f"### 🚀 Fora ({jogador_fora})")
+            st.markdown(f"### ✈️ Fora ({jogador_fora})")
             t_f = st.selectbox("Time ", lista_de_times, index=idx_padrao_fora, key="tf")
             st.markdown(f'''
                 <div style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
                     <img src="{TEAMS[t_f]}" style="max-height: 80px; max-width: 80px; object-fit: contain;">
                 </div>
             ''', unsafe_allow_html=True)
-            g_f = st.number_input("Gols do Fora", min_value=0, value=0, key="gf")
+            g_f = st.number_input("Gols", min_value=0, value=0, key="gf")
 
         foi_p, venc_p = "Não", ""
         if g_c == g_f:
@@ -452,7 +460,7 @@ if tab2:
                 venc_p = st.radio("Quem levou nos pênaltis?", [jogador_casa, jogador_fora])
 
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Salvar Partida 💾", use_container_width=True):
+        if st.button("Salvar partida 💾", use_container_width=True):
             salvar_partida(v_jogo, str(d_j), jogador_casa, t_c, int(g_c), jogador_fora, int(g_f), t_f, foi_p, venc_p)
             st.success("Gravado!")
             st.rerun()
