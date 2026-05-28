@@ -7,7 +7,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="FIFA - Nik vs Digo", page_icon="🎮", layout="wide")
 
 # ==============================================================================
-# ESTÉTICA PRETO FOSCO E RESPONSIVIDADE
+# ESTÉTICA PRETO FOSCO (DARK MODE CUSTOMIZADO)
 # ==============================================================================
 st.markdown("""
     <style>
@@ -247,7 +247,7 @@ with col_title:
         """
         st.markdown(title_html, unsafe_allow_html=True)
 
-        # ADICIONADO PARA O CELULAR (Legenda Oculta no PC e Mostra Apenas Ativas)
+        # ADICIONADO PARA O CELULAR (Sanfona nativa HTML oculta no PC e Mostra Apenas Ativas)
         active_badges = set(stats_globais['badges_nik'] + stats_globais['badges_rod'])
         if active_badges:
             legend_items = ""
@@ -760,7 +760,7 @@ with tab3:
                     c_hist, c_del = st.columns([9.5, 0.5])
                     
                     with c_hist:
-                        # Bloco HTML Inteligente: Mostra a linha esticada no PC e a Grade com X Flexível no Celular
+                        # Bloco HTML Inteligente: Mostra a linha esticada no PC e o Empilhamento Flexível no Celular
                         html_hist = f"""
                         <div class="hist-desktop">
                             <div style="flex: 1.5;">
@@ -772,7 +772,7 @@ with tab3:
                             </div>
                             <div style="flex: 1.5; text-align: center;">
                                 <h3 style='margin: 0;'>{row['gols_casa']} x {row['gols_fora']}</h3>
-                                <p style='margin: 0; font-size:12px; color:gray;'>{pen_html}</p>
+                                <p style='margin: 0; font-size:12px; color:gray; min-height: 14px;'>{pen_html}</p>
                             </div>
                             <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
                                 <img src='{TEAMS.get(tf)}' style='width: 30px; height: 30px; object-fit: contain;'>
@@ -781,43 +781,40 @@ with tab3:
                         </div>
 
                         <div class="hist-mobile">
-                            <p style="margin: 0 0 10px 0; color: #E0E0E0; font-size: 14px;">
-                                📅 <b>{data_br}</b> &nbsp;&nbsp; <small style='color: gray;'>🎮 {row['versao_jogo']}</small>
-                            </p>
+                            <div style="margin-bottom: 10px;">
+                                <div style="font-size: 13px; color: #E0E0E0; margin-bottom: 2px;">📅 <b>{data_br}</b></div>
+                                <div style="font-size: 12px; color: gray;">🎮 {row['versao_jogo']}</div>
+                            </div>
                             
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; flex-direction: column; width: 100%;">
                                 <!-- Linha Casa -->
-                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
-                                    <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2;">
-                                        {row['jogador_casa']} <span style="font-weight: normal; font-size: 13px;">({tc})</span>
+                                <div style="display: flex; align-items: center; width: 100%;">
+                                    <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2; padding-right: 12px; color: #E0E0E0;">
+                                        {row['jogador_casa']} <span style="font-weight: normal; font-size: 13px; color: #A0A0A0;">({tc})</span>
                                     </div>
-                                    <div style="width: 35px; display: flex; justify-content: center;">
-                                        <img src="{TEAMS.get(tc)}" style="width: 30px; height: 30px; object-fit: contain;">
-                                    </div>
-                                    <div style="width: 30px; text-align: center; font-size: 24px; font-weight: bold;">
+                                    <img src="{TEAMS.get(tc)}" style="width: 32px; height: 32px; object-fit: contain;">
+                                    <div style="font-size: 26px; font-weight: bold; width: 45px; text-align: center; color: #ffffff;">
                                         {row['gols_casa']}
                                     </div>
                                 </div>
                                 
-                                <!-- Linha X e Penaltis -->
-                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
-                                    <div style="flex: 1; text-align: right; font-size: 32px; font-weight: 900; font-style: italic; color: #ffffff; line-height: 0.8; padding-right: 15px;">
+                                <!-- Linha X e Pênaltis -->
+                                <div style="display: flex; align-items: center; width: 100%; margin: 8px 0;">
+                                    <div style="flex: 1; text-align: center; font-size: 40px; font-weight: 900; font-style: italic; line-height: 0.8; color: #ffffff;">
                                         X
                                     </div>
-                                    <div style="width: 75px; text-align: center; font-size: 11px; color: gray; white-space: nowrap;">
+                                    <div style="width: 77px; text-align: center; font-size: 11px; color: #A0A0A0; line-height: 1.1;">
                                         {pen_html}
                                     </div>
                                 </div>
 
                                 <!-- Linha Fora -->
-                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
-                                    <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2;">
-                                        {row['jogador_fora']} <span style="font-weight: normal; font-size: 13px;">({tf})</span>
+                                <div style="display: flex; align-items: center; width: 100%;">
+                                    <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2; padding-right: 12px; color: #E0E0E0;">
+                                        {row['jogador_fora']} <span style="font-weight: normal; font-size: 13px; color: #A0A0A0;">({tf})</span>
                                     </div>
-                                    <div style="width: 35px; display: flex; justify-content: center;">
-                                        <img src="{TEAMS.get(tf)}" style="width: 30px; height: 30px; object-fit: contain;">
-                                    </div>
-                                    <div style="width: 30px; text-align: center; font-size: 24px; font-weight: bold;">
+                                    <img src="{TEAMS.get(tf)}" style="width: 32px; height: 32px; object-fit: contain;">
+                                    <div style="font-size: 26px; font-weight: bold; width: 45px; text-align: center; color: #ffffff;">
                                         {row['gols_fora']}
                                     </div>
                                 </div>
