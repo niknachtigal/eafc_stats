@@ -231,23 +231,23 @@ with col_title:
         nik_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_nik']]) if stats_globais['badges_nik'] else ""
         rod_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_rod']]) if stats_globais['badges_rod'] else ""
 
+        # HTML COLADO NA MARGEM PARA EVITAR BUG DO MARKDOWN
         title_html = f"""
-        <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
-            <span style='line-height: 1.2;'>🎮 FIFA EA FC -</span>
-            <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
-                <span style='line-height: 1.2;'>Nikolas</span>
-                <span style='font-size: 1.3rem; margin-top: 2px;'>{nik_badges_html}</span>
-            </div>
-            <span style='line-height: 1.2; margin: 0 5px;'>vs</span>
-            <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
-                <span style='line-height: 1.2;'>Rodrigo</span>
-                <span style='font-size: 1.3rem; margin-top: 2px;'>{rod_badges_html}</span>
-            </div>
-        </div>
-        """
+<div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
+    <span style='line-height: 1.2;'>🎮 FIFA EA FC -</span>
+    <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
+        <span style='line-height: 1.2;'>Nikolas</span>
+        <span style='font-size: 1.3rem; margin-top: 2px;'>{nik_badges_html}</span>
+    </div>
+    <span style='line-height: 1.2; margin: 0 5px;'>vs</span>
+    <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
+        <span style='line-height: 1.2;'>Rodrigo</span>
+        <span style='font-size: 1.3rem; margin-top: 2px;'>{rod_badges_html}</span>
+    </div>
+</div>
+"""
         st.markdown(title_html, unsafe_allow_html=True)
 
-        # ADICIONADO PARA O CELULAR (Sanfona nativa HTML oculta no PC e Mostra Apenas Ativas)
         active_badges = set(stats_globais['badges_nik'] + stats_globais['badges_rod'])
         if active_badges:
             legend_items = ""
@@ -259,14 +259,15 @@ with col_title:
                     else:
                         legend_items += f"<p style='margin: 0 0 8px 0;'>{b} {desc}</p>"
                         
+            # HTML COLADO NA MARGEM
             legend_html = f"""
-            <details class="mobile-legend" style="background-color: #1E1E1E; padding: 10px 15px; border-radius: 8px; border: 1px solid #333333; margin-bottom: 15px;">
-                <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ℹ️ Significado das Medalhas</summary>
-                <div style="margin-top: 12px; font-size: 13px; color: #A0A0A0; line-height: 1.4;">
-                    {legend_items}
-                </div>
-            </details>
-            """
+<details class="mobile-legend" style="background-color: #1E1E1E; padding: 10px 15px; border-radius: 8px; border: 1px solid #333333; margin-bottom: 15px;">
+    <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ℹ️ Significado das Medalhas</summary>
+    <div style="margin-top: 12px; font-size: 13px; color: #A0A0A0; line-height: 1.4;">
+        {legend_items}
+    </div>
+</details>
+"""
             st.markdown(legend_html, unsafe_allow_html=True)
             
     else:
@@ -756,71 +757,70 @@ with tab3:
                 pen_html = f"🎯 Pên: {row['vencedor_penaltis']}" if row['foi_penaltis'] == "Sim" else "&nbsp;"
                 
                 with st.container(border=True):
-                    # Usamos uma divisão híbrida [9.5, 0.5] para o botão lixeira encaixar perfeito 
                     c_hist, c_del = st.columns([9.5, 0.5])
                     
                     with c_hist:
-                        # Bloco HTML Inteligente: Mostra a linha esticada no PC e o Empilhamento Flexível no Celular
+                        # BLOCO HTML SEM IDENTAÇÃO (MARGEM ESQUERDA) PARA EVITAR BUG DO MARKDOWN NO STREAMLIT
                         html_hist = f"""
-                        <div class="hist-desktop">
-                            <div style="flex: 1.5;">
-                                <p style='margin: 0;'>📅 <b>{data_br}</b><br><small style='color: gray;'>🎮 {row['versao_jogo']}</small></p>
-                            </div>
-                            <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-end; gap: 15px;">
-                                <span style='font-size: 16px; font-weight: bold;'>{row['jogador_casa']} ({tc})</span>
-                                <img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>
-                            </div>
-                            <div style="flex: 1.5; text-align: center;">
-                                <h3 style='margin: 0;'>{row['gols_casa']} x {row['gols_fora']}</h3>
-                                <p style='margin: 0; font-size:12px; color:gray; min-height: 14px;'>{pen_html}</p>
-                            </div>
-                            <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
-                                <img src='{TEAMS.get(tf)}' style='width: 30px; height: 30px; object-fit: contain;'>
-                                <span style='font-size: 16px; font-weight: bold;'>({tf}) {row['jogador_fora']}</span>
-                            </div>
-                        </div>
+<div class="hist-desktop">
+    <div style="flex: 1.5;">
+        <p style='margin: 0;'>📅 <b>{data_br}</b><br><small style='color: gray;'>🎮 {row['versao_jogo']}</small></p>
+    </div>
+    <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-end; gap: 15px;">
+        <span style='font-size: 16px; font-weight: bold;'>{row['jogador_casa']} ({tc})</span>
+        <img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>
+    </div>
+    <div style="flex: 1.5; text-align: center;">
+        <h3 style='margin: 0;'>{row['gols_casa']} x {row['gols_fora']}</h3>
+        <p style='margin: 0; font-size:12px; color:gray; min-height: 14px;'>{pen_html}</p>
+    </div>
+    <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+        <img src='{TEAMS.get(tf)}' style='width: 30px; height: 30px; object-fit: contain;'>
+        <span style='font-size: 16px; font-weight: bold;'>({tf}) {row['jogador_fora']}</span>
+    </div>
+</div>
 
-                        <div class="hist-mobile">
-                            <div style="margin-bottom: 10px;">
-                                <div style="font-size: 13px; color: #E0E0E0; margin-bottom: 2px;">📅 <b>{data_br}</b></div>
-                                <div style="font-size: 12px; color: gray;">🎮 {row['versao_jogo']}</div>
-                            </div>
-                            
-                            <div style="display: flex; flex-direction: column; width: 100%;">
-                                <!-- Linha Casa -->
-                                <div style="display: flex; align-items: center; width: 100%;">
-                                    <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2; padding-right: 12px; color: #E0E0E0;">
-                                        {row['jogador_casa']} <span style="font-weight: normal; font-size: 13px; color: #A0A0A0;">({tc})</span>
-                                    </div>
-                                    <img src="{TEAMS.get(tc)}" style="width: 32px; height: 32px; object-fit: contain;">
-                                    <div style="font-size: 26px; font-weight: bold; width: 45px; text-align: center; color: #ffffff;">
-                                        {row['gols_casa']}
-                                    </div>
-                                </div>
-                                
-                                <!-- Linha X e Pênaltis -->
-                                <div style="display: flex; align-items: center; width: 100%; margin: 8px 0;">
-                                    <div style="flex: 1; text-align: center; font-size: 40px; font-weight: 900; font-style: italic; line-height: 0.8; color: #ffffff;">
-                                        X
-                                    </div>
-                                    <div style="width: 77px; text-align: center; font-size: 11px; color: #A0A0A0; line-height: 1.1;">
-                                        {pen_html}
-                                    </div>
-                                </div>
+<div class="hist-mobile" style="padding: 5px 0;">
+    <div style="margin-bottom: 15px;">
+        <div style="font-size: 13px; color: #E0E0E0; margin-bottom: 2px;">📅 <b>{data_br}</b></div>
+        <div style="font-size: 12px; color: gray;">🎮 {row['versao_jogo']}</div>
+    </div>
+    
+    <div style="display: flex; flex-direction: column; width: 100%;">
+        <!-- Linha Casa -->
+        <div style="display: flex; align-items: center; width: 100%;">
+            <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2; padding-right: 12px; color: #E0E0E0;">
+                {row['jogador_casa']} <span style="font-weight: normal; font-size: 13px; color: #A0A0A0;">({tc})</span>
+            </div>
+            <img src="{TEAMS.get(tc)}" style="width: 32px; height: 32px; object-fit: contain;">
+            <div style="font-size: 26px; font-weight: bold; width: 45px; text-align: center; color: #ffffff;">
+                {row['gols_casa']}
+            </div>
+        </div>
+        
+        <!-- Linha X e Pênaltis -->
+        <div style="display: flex; align-items: center; width: 100%; margin: 8px 0;">
+            <div style="flex: 1; text-align: center; font-size: 40px; font-weight: 900; font-style: italic; line-height: 0.8; color: #ffffff;">
+                X
+            </div>
+            <div style="width: 77px; text-align: center; font-size: 11px; color: #A0A0A0; line-height: 1.1;">
+                {pen_html}
+            </div>
+        </div>
 
-                                <!-- Linha Fora -->
-                                <div style="display: flex; align-items: center; width: 100%;">
-                                    <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2; padding-right: 12px; color: #E0E0E0;">
-                                        {row['jogador_fora']} <span style="font-weight: normal; font-size: 13px; color: #A0A0A0;">({tf})</span>
-                                    </div>
-                                    <img src="{TEAMS.get(tf)}" style="width: 32px; height: 32px; object-fit: contain;">
-                                    <div style="font-size: 26px; font-weight: bold; width: 45px; text-align: center; color: #ffffff;">
-                                        {row['gols_fora']}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        """
+        <!-- Linha Fora -->
+        <div style="display: flex; align-items: center; width: 100%;">
+            <div style="flex: 1; text-align: right; font-size: 15px; font-weight: bold; line-height: 1.2; padding-right: 12px; color: #E0E0E0;">
+                {row['jogador_fora']} <span style="font-weight: normal; font-size: 13px; color: #A0A0A0;">({tf})</span>
+            </div>
+            <img src="{TEAMS.get(tf)}" style="width: 32px; height: 32px; object-fit: contain;">
+            <div style="font-size: 26px; font-weight: bold; width: 45px; text-align: center; color: #ffffff;">
+                {row['gols_fora']}
+            </div>
+        </div>
+    </div>
+</div>
+"""
                         st.markdown(html_hist, unsafe_allow_html=True)
                         
                     with c_del:
