@@ -34,6 +34,27 @@ st.markdown("""
             color: #4DE17C !important;
             border-bottom-color: #4DE17C !important;
         }
+        
+        /* Oculta a legenda de medalhas no PC, mostra apenas no celular */
+        @media (min-width: 768px) {
+            .mobile-legend { display: none !important; }
+        }
+        .mobile-legend {
+            font-size: 0.85rem;
+            color: #A0A0A0;
+            background-color: #1E1E1E;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333333;
+            margin-top: 10px;
+        }
+        .mobile-legend p {
+            margin: 0 0 5px 0;
+            line-height: 1.3;
+        }
+        .mobile-legend p:last-child {
+            margin: 0;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -234,15 +255,21 @@ with col_title:
         """
         st.markdown(title_html, unsafe_allow_html=True)
 
-        # ADICIONADO PARA O CELULAR (Sanfona de Legenda)
-        with st.expander("ℹ️ Significado das Medalhas"):
-            st.markdown(f"""
-            - 👑 **Rei do Fifa:** Maior número de vitórias, média de gols, sequência histórica e saldo nas vitórias.
-            - 🛡️ **Muralha:** Maior número de jogos sem sofrer gols.
-            - 🎯 **Frio e Calculista:** Maior taxa de vitória nos pênaltis.
-            - ⚽ **Máquina de Gols:** Maior média de gols marcados.
-            - 🦆 **Pato:** Perdeu os últimos **{seq_perdedor}** jogos.
-            """)
+        # ADICIONADO PARA O CELULAR (Legenda Oculta no PC e Mostra Apenas Ativas)
+        active_badges = set(stats_globais['badges_nik'] + stats_globais['badges_rod'])
+        if active_badges:
+            legend_html = "<div class='mobile-legend'><div style='margin-bottom: 5px; color: #E0E0E0;'><b>ℹ️ Legenda das Medalhas</b></div>"
+            # Iteramos pelas descrições para manter a ordem e formatação
+            for b, desc in badges_desc.items():
+                if b in active_badges:
+                    if ":" in desc:
+                        nome, texto = desc.split(":", 1)
+                        legend_html += f"<p>{b} <b>{nome}</b>:{texto}</p>"
+                    else:
+                        legend_html += f"<p>{b} {desc}</p>"
+            legend_html += "</div>"
+            st.markdown(legend_html, unsafe_allow_html=True)
+            
     else:
         st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
 
