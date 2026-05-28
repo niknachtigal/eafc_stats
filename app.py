@@ -6,42 +6,149 @@ from supabase import create_client, Client
 # Configuração da página
 st.set_page_config(page_title="FIFA - Nik vs Digo", page_icon="🎮", layout="wide")
 
+# ==============================================================================
+# ESTÉTICA PRETO FOSCO (DARK MODE CUSTOMIZADO)
+# ==============================================================================
+st.markdown("""
+    <style>
+        /* Fundo principal */
+        .stApp {
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        /* Cor de fundo para os containers e métricas */
+        div[data-testid="stMetric"], div[data-testid="stContainer"] {
+            background-color: #1E1E1E;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #333333;
+        }
+        /* Ajuste do topo das abas */
+        .stTabs [data-baseweb="tab-list"] {
+            background-color: #121212;
+        }
+        .stTabs [data-baseweb="tab"] {
+            color: #A0A0A0;
+        }
+        .stTabs [aria-selected="true"] {
+            color: #4DE17C !important;
+            border-bottom-color: #4DE17C !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # Inicializa o estado de autenticação
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 # ==============================================================================
-# CABEÇALHO E LOGIN (Canto Superior Direito)
+# LÓGICA DE VITÓRIAS, SEQUÊNCIAS E GAMIFICAÇÃO
 # ==============================================================================
-col_title, col_login = st.columns([5, 1])
+def obter_vencedor(row):
+    if row['gols_casa'] > row['gols_fora']: return row['jogador_casa']
+    if row['gols_fora'] > row['gols_casa']: return row['jogador_fora']
+    if row['foi_penaltis'] == "Sim": return row['vencedor_penaltis']
+    return "Empate"
 
-with col_title:
-    st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
-
-with col_login:
-    # Espaçamento para alinhar o botão de login com o título
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+def calcular_estatisticas(df):
+    if df.empty: return None
     
-    if not st.session_state["autenticado"]:
-        # Popover que imita o menu dropdown da sua imagem
-        with st.popover("🔐 Acesso Restrito", use_container_width=True):
-            senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
-            if st.button("Entrar", use_container_width=True):
-                if senha_digitada == st.secrets["APP_PASSWORD"]:
-                    st.session_state["autenticado"] = True
-                    st.rerun()
-                else:
-                    st.error("Incorreta!")
-    else:
-        # Botão de Logout se já estiver autenticado
-        if st.button("🔓 Sair do Painel", use_container_width=True):
-            st.session_state["autenticado"] = False
-            st.rerun()
+    df['vencedor'] = df.apply(obter_vencedor, axis=1)
+    vencedores_lista = df.sort_values('id')['vencedor'].tolist()
+    
+    # Sequência de vitórias
+    ultima = vencedores_lista[-1] if vencedores_lista else "Empate"
+    seq_at_p, seq_at_q = (ultima, 0)
+    if ultima != "Empate":
+        for v in reversed(vencedores_lista):
+            if v == ultima: seq_at_q += 1
+            else: break
+            
+    max_n, max_r, cur_n, cur_r = 0, 0, 0, 0
+    for v in vencedores_lista:
+        if v == "Nikolas": 
+            cur_n += 1; cur_r = 0
+            if cur_n > max_n: max_n = cur_n
+        elif v == "Rodrigo":
+            cur_r += 1; cur_n = 0
+            if cur_r > max_r: max_r = cur_r
+        else: cur_n, cur_r = 0, 0
+            
+    df['dif'] = (df['gols_casa'] - df['gols_fora']).abs()
+    df['soma'] = df['gols_casa'] + df['gols_fora']
+    top_5 = df.sort_values(by=['dif', 'soma'], ascending=[False, False]).head(5)
+    
+    nik_times = pd.concat([df[df['jogador_casa']=='Nikolas']['time_casa'], df[df['jogador_fora']=='Nikolas']['time_fora']])
+    rod_times = pd.concat([df[df['jogador_casa']=='Rodrigo']['time_casa'], df[df['jogador_fora']=='Rodrigo']['time_fora']])
+    
+    total_jogos = len(df)
+    v_nik = len(df[df['vencedor'] == 'Nikolas'])
+    v_rod = len(df[df['vencedor'] == 'Rodrigo'])
+    emp = len(df[df['vencedor'] == 'Empate'])
+    
+    g_nik = df[df['jogador_casa']=='Nikolas']['gols_casa'].sum() + df[df['jogador_fora']=='Nikolas']['gols_fora'].sum()
+    g_rod = df[df['jogador_casa']=='Rodrigo']['gols_casa'].sum() + df[df['jogador_fora']=='Rodrigo']['gols_fora'].sum()
+    
+    pen_nik = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Nikolas')])
+    pen_rod = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Rodrigo')])
+    pen_disputados = len(df[df['foi_penaltis'] == 'Sim'])
 
-st.markdown("---")
+    # --- LÓGICA DE GAMIFICAÇÃO (BADGES E MURALHA) ---
+    # Clean Sheets Totais
+    cs_nik = len(df[((df['jogador_casa']=='Nikolas') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Nikolas') & (df['gols_casa']==0))])
+    cs_rod = len(df[((df['jogador_casa']=='Rodrigo') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Rodrigo') & (df['gols_casa']==0))])
+    
+    badges_nik = []
+    badges_rod = []
+    
+    # Badge Muralha Total
+    if cs_nik > cs_rod and cs_nik > 0: badges_nik.append("🛡️ Muralha")
+    elif cs_rod > cs_nik and cs_rod > 0: badges_rod.append("🛡️ Muralha")
+        
+    # Badge Pênaltis
+    if pen_disputados > 0:
+        tx_nik = pen_nik / pen_disputados
+        tx_rod = pen_rod / pen_disputados
+        if tx_nik > tx_rod and tx_nik > 0: badges_nik.append("🎯 Frio e Calculista")
+        elif tx_rod > tx_nik and tx_rod > 0: badges_rod.append("🎯 Frio e Calculista")
+            
+    # Badge Máquina de Gols
+    if total_jogos > 0:
+        avg_nik = g_nik / total_jogos
+        avg_rod = g_rod / total_jogos
+        if avg_nik > avg_rod and avg_nik > 0: badges_nik.append("🔥 Máquina de Gols")
+        elif avg_rod > avg_nik and avg_rod > 0: badges_rod.append("🔥 Máquina de Gols")
+
+    # Sequência Atual de Clean Sheets (Muralha em tempo real)
+    cur_cs_nik = 0
+    cur_cs_rod = 0
+    for _, row in df.sort_values('id', ascending=False).iterrows():
+        is_nik_cs = (row['jogador_casa'] == 'Nikolas' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Nikolas' and row['gols_casa'] == 0)
+        if is_nik_cs: cur_cs_nik += 1
+        else: break
+        
+    for _, row in df.sort_values('id', ascending=False).iterrows():
+        is_rod_cs = (row['jogador_casa'] == 'Rodrigo' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Rodrigo' and row['gols_casa'] == 0)
+        if is_rod_cs: cur_cs_rod += 1
+        else: break
+
+    return {
+        "total_jogos": total_jogos,
+        "v_nik": v_nik, "v_rod": v_rod, "emp": emp,
+        "g_nik": g_nik, "g_rod": g_rod,
+        "pen_nik": pen_nik, "pen_rod": pen_rod,
+        "seq_at_p": seq_at_p, "seq_at_q": seq_at_q,
+        "max_nik": max_n, "max_rod": max_r,
+        "top_5": top_5,
+        "nik_top_teams": nik_times.value_counts().head(3).to_dict() if not nik_times.empty else {},
+        "rod_top_teams": rod_times.value_counts().head(3).to_dict() if not rod_times.empty else {},
+        "badges_nik": badges_nik, "badges_rod": badges_rod,
+        "cur_cs_nik": cur_cs_nik, "cur_cs_rod": cur_cs_rod,
+        "df_completo": df # Passando o DF para o gráfico de linhas
+    }
 
 # ==============================================================================
-# CONEXÃO COM SUPABASE
+# CONEXÃO COM SUPABASE E FUNÇÕES DO BANCO
 # ==============================================================================
 @st.cache_resource
 def init_connection():
@@ -75,6 +182,47 @@ def ler_partidas():
         return pd.DataFrame(response.data)
     else:
         return pd.DataFrame(columns=["id", "versao_jogo", "data", "jogador_casa", "time_casa", "gols_casa", "jogador_fora", "gols_fora", "time_fora", "foi_penaltis", "vencedor_penaltis"])
+
+# Carrega os Dados Iniciais
+df_partidas = ler_partidas()
+stats_globais = calcular_estatisticas(df_partidas)
+
+# ==============================================================================
+# CABEÇALHO E LOGIN (Canto Superior Direito)
+# ==============================================================================
+col_title, col_login = st.columns([5, 1])
+
+with col_title:
+    st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
+    
+    # Exibe os Badges Globais embaixo do título se houver jogos
+    if stats_globais:
+        c_badge_n, c_badge_r = st.columns(2)
+        with c_badge_n:
+            if stats_globais['badges_nik']:
+                st.markdown(f"<span style='color:#A0A0A0;'>Conquistas Nikolas:</span> **{' '.join(stats_globais['badges_nik'])}**", unsafe_allow_html=True)
+        with c_badge_r:
+            if stats_globais['badges_rod']:
+                st.markdown(f"<span style='color:#A0A0A0;'>Conquistas Rodrigo:</span> **{' '.join(stats_globais['badges_rod'])}**", unsafe_allow_html=True)
+
+with col_login:
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    if not st.session_state["autenticado"]:
+        with st.popover("🔐 Acesso Restrito", use_container_width=True):
+            senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
+            if st.button("Entrar", use_container_width=True):
+                if senha_digitada == st.secrets["APP_PASSWORD"]:
+                    st.session_state["autenticado"] = True
+                    st.rerun()
+                else:
+                    st.error("Incorreta!")
+    else:
+        if st.button("🔓 Sair do Painel", use_container_width=True):
+            st.session_state["autenticado"] = False
+            st.rerun()
+
+st.markdown("---")
+
 
 # ==============================================================================
 # DICIONÁRIO DE TIMES E LOGOS
@@ -226,69 +374,11 @@ TEAMS = {
 }
 TEAMS = dict(sorted(TEAMS.items()))
 
-VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30", "EA FC 24", "EA FC 25", "EA FC 26"]
-
-# ==============================================================================
-# LÓGICA DE VITÓRIAS E SEQUÊNCIAS
-# ==============================================================================
-def obter_vencedor(row):
-    if row['gols_casa'] > row['gols_fora']: return row['jogador_casa']
-    if row['gols_fora'] > row['gols_casa']: return row['jogador_fora']
-    if row['foi_penaltis'] == "Sim": return row['vencedor_penaltis']
-    return "Empate"
-
-def calcular_estatisticas(df):
-    if df.empty: return None
-    
-    df['vencedor'] = df.apply(obter_vencedor, axis=1)
-    vencedores_lista = df.sort_values('id')['vencedor'].tolist()
-    
-    ultima = vencedores_lista[-1]
-    seq_at_p, seq_at_q = (ultima, 0)
-    if ultima != "Empate":
-        for v in reversed(vencedores_lista):
-            if v == ultima: seq_at_q += 1
-            else: break
-            
-    max_n, max_r, cur_n, cur_r = 0, 0, 0, 0
-    for v in vencedores_lista:
-        if v == "Nikolas": 
-            cur_n += 1; cur_r = 0
-            if cur_n > max_n: max_n = cur_n
-        elif v == "Rodrigo":
-            cur_r += 1; cur_n = 0
-            if cur_r > max_r: max_r = cur_r
-        else: cur_n, cur_r = 0, 0
-            
-    df['dif'] = (df['gols_casa'] - df['gols_fora']).abs()
-    df['soma'] = df['gols_casa'] + df['gols_fora']
-    top_5 = df.sort_values(by=['dif', 'soma'], ascending=[False, False]).head(5)
-    
-    nik_times = pd.concat([df[df['jogador_casa']=='Nikolas']['time_casa'], df[df['jogador_fora']=='Nikolas']['time_fora']])
-    rod_times = pd.concat([df[df['jogador_casa']=='Rodrigo']['time_casa'], df[df['jogador_fora']=='Rodrigo']['time_fora']])
-    
-    return {
-        "total_jogos": len(df),
-        "v_nik": len(df[df['vencedor'] == 'Nikolas']),
-        "v_rod": len(df[df['vencedor'] == 'Rodrigo']),
-        "emp": len(df[df['vencedor'] == 'Empate']),
-        "g_nik": df[df['jogador_casa']=='Nikolas']['gols_casa'].sum() + df[df['jogador_fora']=='Nikolas']['gols_fora'].sum(),
-        "g_rod": df[df['jogador_casa']=='Rodrigo']['gols_casa'].sum() + df[df['jogador_fora']=='Rodrigo']['gols_fora'].sum(),
-        "pen_nik": len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Nikolas')]),
-        "pen_rod": len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Rodrigo')]),
-        "seq_at_p": seq_at_p, "seq_at_q": seq_at_q,
-        "max_nik": max_n, "max_rod": max_r,
-        "top_5": top_5,
-        "nik_top_teams": nik_times.value_counts().head(3).to_dict() if not nik_times.empty else {},
-        "rod_top_teams": rod_times.value_counts().head(3).to_dict() if not rod_times.empty else {}
-    }
+VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30"]
 
 # ==============================================================================
 # ABAS DINÂMICAS BASEADAS NA AUTENTICAÇÃO
 # ==============================================================================
-df_partidas = ler_partidas()
-
-# Se autenticado, mostra as 3 abas. Se não, mostra só 2.
 if st.session_state["autenticado"]:
     tabs = st.tabs(["📊 Dashboard Geral", "📝 Registrar Partida", "📜 Histórico de Jogos"])
     tab1, tab2, tab3 = tabs[0], tabs[1], tabs[2]
@@ -326,10 +416,19 @@ with tab1:
             c_s1, c_s2 = st.columns(2)
             with c_s1:
                 st.subheader("➡️ Sequência Atual")
-                if stats['seq_at_q'] > 0:
+                if stats['seq_at_q'] >= 10:
+                    perdedor = "Rodrigo" if stats['seq_at_p'] == "Nikolas" else "Nikolas"
+                    st.warning(f"🦆 {stats['seq_at_p']} venceu a(s) última(s) **{stats['seq_at_q']}** partida(s) do seu filho {perdedor}!")
+                elif stats['seq_at_q'] > 0:
                     st.info(f"🔵 **{stats['seq_at_p']}** venceu a(s) última(s) **{stats['seq_at_q']}** partida(s)!")
                 else:
                     st.info(f"🔘 Última partida foi {stats['seq_at_p']}")
+
+                # Easter Egg Muralha
+                if stats['cur_cs_nik'] > 0:
+                    st.markdown(f"<small>🛡️Nikolas está há **{stats['cur_cs_nik']}** partida(s) sem tomar gol.</small>", unsafe_allow_html=True)
+                if stats['cur_cs_rod'] > 0:
+                    st.markdown(f"<small>🛡️Rodrigo está há **{stats['cur_cs_rod']}** partida(s) sem tomar gol.</small>", unsafe_allow_html=True)
             
             with c_s2:
                 st.subheader("🏆 Recordes de Sequência")
@@ -339,6 +438,14 @@ with tab1:
                 else:
                     st.success(f"👑 A maior sequência histórica é de **Rodrigo** com **{stats['max_rod']}** vitórias seguidas.")
                     st.info(f"A maior sequência histórica de **Nikolas** é de **{stats['max_nik']}** vitórias seguidas.")
+
+            # GRÁFICO DE CORRIDA DOS CAMPEÕES
+            st.markdown("### 📈 Corrida dos Campeões (Evolução de Vitórias)")
+            df_chart = stats['df_completo'].copy().sort_values('id')
+            df_chart['Vitórias Nikolas'] = (df_chart['vencedor'] == 'Nikolas').cumsum()
+            df_chart['Vitórias Rodrigo'] = (df_chart['vencedor'] == 'Rodrigo').cumsum()
+            df_chart['Partida'] = range(1, len(df_chart) + 1)
+            st.line_chart(df_chart.set_index('Partida')[['Vitórias Nikolas', 'Vitórias Rodrigo']], color=["#4DE17C", "#FF4B4B"])
 
             st.markdown("### 📊 Estatísticas Detalhadas")
             c1, c2, c3 = st.columns(3)
@@ -412,7 +519,6 @@ if tab2:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # --- Identificação dinâmica do índice para o Real Madrid e FC Barcelona ---
         lista_de_times = list(TEAMS.keys())
         
         try: idx_real_madrid = lista_de_times.index("Real Madrid")
@@ -421,7 +527,6 @@ if tab2:
         try: idx_barcelona = lista_de_times.index("FC Barcelona")
         except ValueError: idx_barcelona = 0
 
-        # Onde Nikolas estiver, o padrão é Real Madrid. Onde Rodrigo estiver, o padrão é FC Barcelona.
         idx_padrao_casa = idx_real_madrid if jogador_casa == "Nikolas" else idx_barcelona
         idx_padrao_fora = idx_real_madrid if jogador_fora == "Nikolas" else idx_barcelona
         
@@ -543,7 +648,6 @@ with tab3:
                         )
                         
                     with c_del:
-                        # O BOTÃO DE LIXEIRA SÓ APARECE SE ESTIVER AUTENTICADO
                         if st.session_state["autenticado"]:
                             st.markdown("<style>div.stButton > button {margin-top: 10px;}</style>", unsafe_allow_html=True)
                             if st.button("🗑️", key=f"del_{row['id']}"):
