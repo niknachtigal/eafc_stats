@@ -11,7 +11,7 @@ st.set_page_config(page_title="FIFA - Nik vs Digo", page_icon="🎮", layout="wi
 # ==============================================================================
 st.markdown("""
     <style>
-        /* Fundo principal */
+        /* Fundo principal e texto */
         .stApp {
             background-color: #121212;
             color: #E0E0E0;
@@ -20,10 +20,10 @@ st.markdown("""
         div[data-testid="stMetric"], div[data-testid="stContainer"] {
             background-color: #1E1E1E;
             border-radius: 8px;
-            padding: 10px;
+            padding: 15px;
             border: 1px solid #333333;
         }
-        /* Ajuste do topo das abas */
+        /* Ajuste do topo das abas para ficarem harmoniosas */
         .stTabs [data-baseweb="tab-list"] {
             background-color: #121212;
         }
@@ -42,113 +42,7 @@ if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 # ==============================================================================
-# LÓGICA DE VITÓRIAS, SEQUÊNCIAS E GAMIFICAÇÃO
-# ==============================================================================
-def obter_vencedor(row):
-    if row['gols_casa'] > row['gols_fora']: return row['jogador_casa']
-    if row['gols_fora'] > row['gols_casa']: return row['jogador_fora']
-    if row['foi_penaltis'] == "Sim": return row['vencedor_penaltis']
-    return "Empate"
-
-def calcular_estatisticas(df):
-    if df.empty: return None
-    
-    df['vencedor'] = df.apply(obter_vencedor, axis=1)
-    vencedores_lista = df.sort_values('id')['vencedor'].tolist()
-    
-    # Sequência de vitórias
-    ultima = vencedores_lista[-1] if vencedores_lista else "Empate"
-    seq_at_p, seq_at_q = (ultima, 0)
-    if ultima != "Empate":
-        for v in reversed(vencedores_lista):
-            if v == ultima: seq_at_q += 1
-            else: break
-            
-    max_n, max_r, cur_n, cur_r = 0, 0, 0, 0
-    for v in vencedores_lista:
-        if v == "Nikolas": 
-            cur_n += 1; cur_r = 0
-            if cur_n > max_n: max_n = cur_n
-        elif v == "Rodrigo":
-            cur_r += 1; cur_n = 0
-            if cur_r > max_r: max_r = cur_r
-        else: cur_n, cur_r = 0, 0
-            
-    df['dif'] = (df['gols_casa'] - df['gols_fora']).abs()
-    df['soma'] = df['gols_casa'] + df['gols_fora']
-    top_5 = df.sort_values(by=['dif', 'soma'], ascending=[False, False]).head(5)
-    
-    nik_times = pd.concat([df[df['jogador_casa']=='Nikolas']['time_casa'], df[df['jogador_fora']=='Nikolas']['time_fora']])
-    rod_times = pd.concat([df[df['jogador_casa']=='Rodrigo']['time_casa'], df[df['jogador_fora']=='Rodrigo']['time_fora']])
-    
-    total_jogos = len(df)
-    v_nik = len(df[df['vencedor'] == 'Nikolas'])
-    v_rod = len(df[df['vencedor'] == 'Rodrigo'])
-    emp = len(df[df['vencedor'] == 'Empate'])
-    
-    g_nik = df[df['jogador_casa']=='Nikolas']['gols_casa'].sum() + df[df['jogador_fora']=='Nikolas']['gols_fora'].sum()
-    g_rod = df[df['jogador_casa']=='Rodrigo']['gols_casa'].sum() + df[df['jogador_fora']=='Rodrigo']['gols_fora'].sum()
-    
-    pen_nik = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Nikolas')])
-    pen_rod = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Rodrigo')])
-    pen_disputados = len(df[df['foi_penaltis'] == 'Sim'])
-
-    # --- LÓGICA DE GAMIFICAÇÃO (BADGES E MURALHA) ---
-    # Clean Sheets Totais
-    cs_nik = len(df[((df['jogador_casa']=='Nikolas') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Nikolas') & (df['gols_casa']==0))])
-    cs_rod = len(df[((df['jogador_casa']=='Rodrigo') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Rodrigo') & (df['gols_casa']==0))])
-    
-    badges_nik = []
-    badges_rod = []
-    
-    # Badge Muralha Total
-    if cs_nik > cs_rod and cs_nik > 0: badges_nik.append("🛡️ Muralha")
-    elif cs_rod > cs_nik and cs_rod > 0: badges_rod.append("🛡️ Muralha")
-        
-    # Badge Pênaltis
-    if pen_disputados > 0:
-        tx_nik = pen_nik / pen_disputados
-        tx_rod = pen_rod / pen_disputados
-        if tx_nik > tx_rod and tx_nik > 0: badges_nik.append("🎯 Frio e Calculista")
-        elif tx_rod > tx_nik and tx_rod > 0: badges_rod.append("🎯 Frio e Calculista")
-            
-    # Badge Máquina de Gols
-    if total_jogos > 0:
-        avg_nik = g_nik / total_jogos
-        avg_rod = g_rod / total_jogos
-        if avg_nik > avg_rod and avg_nik > 0: badges_nik.append("🔥 Máquina de Gols")
-        elif avg_rod > avg_nik and avg_rod > 0: badges_rod.append("🔥 Máquina de Gols")
-
-    # Sequência Atual de Clean Sheets (Muralha em tempo real)
-    cur_cs_nik = 0
-    cur_cs_rod = 0
-    for _, row in df.sort_values('id', ascending=False).iterrows():
-        is_nik_cs = (row['jogador_casa'] == 'Nikolas' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Nikolas' and row['gols_casa'] == 0)
-        if is_nik_cs: cur_cs_nik += 1
-        else: break
-        
-    for _, row in df.sort_values('id', ascending=False).iterrows():
-        is_rod_cs = (row['jogador_casa'] == 'Rodrigo' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Rodrigo' and row['gols_casa'] == 0)
-        if is_rod_cs: cur_cs_rod += 1
-        else: break
-
-    return {
-        "total_jogos": total_jogos,
-        "v_nik": v_nik, "v_rod": v_rod, "emp": emp,
-        "g_nik": g_nik, "g_rod": g_rod,
-        "pen_nik": pen_nik, "pen_rod": pen_rod,
-        "seq_at_p": seq_at_p, "seq_at_q": seq_at_q,
-        "max_nik": max_n, "max_rod": max_r,
-        "top_5": top_5,
-        "nik_top_teams": nik_times.value_counts().head(3).to_dict() if not nik_times.empty else {},
-        "rod_top_teams": rod_times.value_counts().head(3).to_dict() if not rod_times.empty else {},
-        "badges_nik": badges_nik, "badges_rod": badges_rod,
-        "cur_cs_nik": cur_cs_nik, "cur_cs_rod": cur_cs_rod,
-        "df_completo": df # Passando o DF para o gráfico de linhas
-    }
-
-# ==============================================================================
-# CONEXÃO COM SUPABASE E FUNÇÕES DO BANCO
+# CONEXÃO COM SUPABASE
 # ==============================================================================
 @st.cache_resource
 def init_connection():
@@ -183,7 +77,100 @@ def ler_partidas():
     else:
         return pd.DataFrame(columns=["id", "versao_jogo", "data", "jogador_casa", "time_casa", "gols_casa", "jogador_fora", "gols_fora", "time_fora", "foi_penaltis", "vencedor_penaltis"])
 
-# Carrega os Dados Iniciais
+# ==============================================================================
+# LÓGICA DE VITÓRIAS E GAMIFICAÇÃO
+# ==============================================================================
+def obter_vencedor(row):
+    if row['gols_casa'] > row['gols_fora']: return row['jogador_casa']
+    if row['gols_fora'] > row['gols_casa']: return row['jogador_fora']
+    if row['foi_penaltis'] == "Sim": return row['vencedor_penaltis']
+    return "Empate"
+
+def calcular_estatisticas(df):
+    if df.empty: return None
+    
+    df['vencedor'] = df.apply(obter_vencedor, axis=1)
+    vencedores_lista = df.sort_values('id')['vencedor'].tolist()
+    
+    ultima = vencedores_lista[-1]
+    seq_at_p, seq_at_q = (ultima, 0)
+    if ultima != "Empate":
+        for v in reversed(vencedores_lista):
+            if v == ultima: seq_at_q += 1
+            else: break
+            
+    max_n, max_r, cur_n, cur_r = 0, 0, 0, 0
+    for v in vencedores_lista:
+        if v == "Nikolas": 
+            cur_n += 1; cur_r = 0
+            if cur_n > max_n: max_n = cur_n
+        elif v == "Rodrigo":
+            cur_r += 1; cur_n = 0
+            if cur_r > max_r: max_r = cur_r
+        else: cur_n, cur_r = 0, 0
+            
+    df['dif'] = (df['gols_casa'] - df['gols_fora']).abs()
+    df['soma'] = df['gols_casa'] + df['gols_fora']
+    top_5 = df.sort_values(by=['dif', 'soma'], ascending=[False, False]).head(5)
+    
+    nik_times = pd.concat([df[df['jogador_casa']=='Nikolas']['time_casa'], df[df['jogador_fora']=='Nikolas']['time_fora']])
+    rod_times = pd.concat([df[df['jogador_casa']=='Rodrigo']['time_casa'], df[df['jogador_fora']=='Rodrigo']['time_fora']])
+    
+    total_jogos = len(df)
+    g_nik = df[df['jogador_casa']=='Nikolas']['gols_casa'].sum() + df[df['jogador_fora']=='Nikolas']['gols_fora'].sum()
+    g_rod = df[df['jogador_casa']=='Rodrigo']['gols_casa'].sum() + df[df['jogador_fora']=='Rodrigo']['gols_fora'].sum()
+    pen_nik = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Nikolas')])
+    pen_rod = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Rodrigo')])
+    pen_disputados = len(df[df['foi_penaltis'] == 'Sim'])
+
+    # -- Lógica dos Badges (Medalhas) --
+    cs_nik = len(df[((df['jogador_casa']=='Nikolas') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Nikolas') & (df['gols_casa']==0))])
+    cs_rod = len(df[((df['jogador_casa']=='Rodrigo') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Rodrigo') & (df['gols_casa']==0))])
+    
+    badges_nik, badges_rod = [], []
+    
+    # Muralha
+    if cs_nik > cs_rod and cs_nik > 0: badges_nik.append("🛡️")
+    elif cs_rod > cs_nik and cs_rod > 0: badges_rod.append("🛡️")
+    # Pênaltis
+    if pen_disputados > 0:
+        tx_nik = pen_nik / pen_disputados
+        tx_rod = pen_rod / pen_disputados
+        if tx_nik > tx_rod and tx_nik > 0: badges_nik.append("🎯")
+        elif tx_rod > tx_nik and tx_rod > 0: badges_rod.append("🎯")
+    # Máquina de Gols
+    if total_jogos > 0:
+        avg_nik = g_nik / total_jogos
+        avg_rod = g_rod / total_jogos
+        if avg_nik > avg_rod and avg_nik > 0: badges_nik.append("🔥")
+        elif avg_rod > avg_nik and avg_rod > 0: badges_rod.append("🔥")
+
+    # Sequência Atual Sem Tomar Gol
+    cur_cs_nik, cur_cs_rod = 0, 0
+    for _, row in df.sort_values('id', ascending=False).iterrows():
+        if (row['jogador_casa'] == 'Nikolas' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Nikolas' and row['gols_casa'] == 0): cur_cs_nik += 1
+        else: break
+    for _, row in df.sort_values('id', ascending=False).iterrows():
+        if (row['jogador_casa'] == 'Rodrigo' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Rodrigo' and row['gols_casa'] == 0): cur_cs_rod += 1
+        else: break
+
+    return {
+        "total_jogos": total_jogos,
+        "v_nik": len(df[df['vencedor'] == 'Nikolas']),
+        "v_rod": len(df[df['vencedor'] == 'Rodrigo']),
+        "emp": len(df[df['vencedor'] == 'Empate']),
+        "g_nik": g_nik, "g_rod": g_rod,
+        "pen_nik": pen_nik, "pen_rod": pen_rod,
+        "seq_at_p": seq_at_p, "seq_at_q": seq_at_q,
+        "max_nik": max_n, "max_rod": max_r,
+        "top_5": top_5,
+        "nik_top_teams": nik_times.value_counts().head(3).to_dict() if not nik_times.empty else {},
+        "rod_top_teams": rod_times.value_counts().head(3).to_dict() if not rod_times.empty else {},
+        "badges_nik": badges_nik, "badges_rod": badges_rod,
+        "cur_cs_nik": cur_cs_nik, "cur_cs_rod": cur_cs_rod
+    }
+
+# Lemos os dados AQUI para poder usar as informações no título!
 df_partidas = ler_partidas()
 stats_globais = calcular_estatisticas(df_partidas)
 
@@ -193,20 +180,37 @@ stats_globais = calcular_estatisticas(df_partidas)
 col_title, col_login = st.columns([5, 1])
 
 with col_title:
-    st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
-    
-    # Exibe os Badges Globais embaixo do título se houver jogos
     if stats_globais:
-        c_badge_n, c_badge_r = st.columns(2)
-        with c_badge_n:
-            if stats_globais['badges_nik']:
-                st.markdown(f"<span style='color:#A0A0A0;'>Conquistas Nikolas:</span> **{' '.join(stats_globais['badges_nik'])}**", unsafe_allow_html=True)
-        with c_badge_r:
-            if stats_globais['badges_rod']:
-                st.markdown(f"<span style='color:#A0A0A0;'>Conquistas Rodrigo:</span> **{' '.join(stats_globais['badges_rod'])}**", unsafe_allow_html=True)
+        # Dicionário explicativo para o Tooltip (Hover)
+        badges_desc = {
+            "🛡️": "Muralha: Maior número de jogos sem sofrer gols",
+            "🎯": "Frio e Calculista: Maior taxa de vitória nos pênaltis",
+            "🔥": "Máquina de Gols: Maior média de gols marcados"
+        }
+        nik_badges_html = "".join([f"<span title='{badges_desc[b]}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_nik']])
+        rod_badges_html = "".join([f"<span title='{badges_desc[b]}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_rod']])
+
+        # HTML Personalizado para criar o visual exato da imagem
+        title_html = f"""
+        <div style='display: flex; align-items: center; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 20px;'>
+            🎮 FIFA EA FC - 
+            <div style='text-align: center; display: inline-block; line-height: 1.1;'>
+                Nikolas<br><span style='font-size: 1.2rem;'>{nik_badges_html}</span>
+            </div>
+            <span style='margin: 0 5px;'>vs</span>
+            <div style='text-align: center; display: inline-block; line-height: 1.1;'>
+                Rodrigo<br><span style='font-size: 1.2rem;'>{rod_badges_html}</span>
+            </div>
+        </div>
+        """
+        st.markdown(title_html, unsafe_allow_html=True)
+    else:
+        st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
 
 with col_login:
+    # Espaçamento para alinhar o botão de login com o título
     st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    
     if not st.session_state["autenticado"]:
         with st.popover("🔐 Acesso Restrito", use_container_width=True):
             senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
@@ -222,7 +226,6 @@ with col_login:
             st.rerun()
 
 st.markdown("---")
-
 
 # ==============================================================================
 # DICIONÁRIO DE TIMES E LOGOS
@@ -349,7 +352,7 @@ TEAMS = {
     # Outros
     "Al Ahli": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b5/Al-Ahli_Saudi_FC_logo.svg/200px-Al-Ahli_Saudi_FC_logo.svg.png",
     "Al Hilal": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Al_Hilal_SFC_Logo.svg/120px-Al_Hilal_SFC_Logo.svg.png",
-    "Al Ittihad": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a3/Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg/200px-Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg.png",
+    "Al Ittihad": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a3/Al-Ittihad_Club_%2Saudi_Arabia%29_logo.svg/200px-Al-Ittihad_Club_%2Saudi_Arabia%29_logo.svg.png",
     "Al Nassr": "https://upload.wikimedia.org/wikipedia/en/3/3f/Nassr_FC_Logo.svg",
     "Boca Juniors": "https://crests.football-data.org/1127.png",
     "River Plate": "https://crests.football-data.org/1128.png",
@@ -375,6 +378,7 @@ TEAMS = {
 TEAMS = dict(sorted(TEAMS.items()))
 
 VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30"]
+
 
 # ==============================================================================
 # ABAS DINÂMICAS BASEADAS NA AUTENTICAÇÃO
@@ -418,17 +422,17 @@ with tab1:
                 st.subheader("➡️ Sequência Atual")
                 if stats['seq_at_q'] >= 10:
                     perdedor = "Rodrigo" if stats['seq_at_p'] == "Nikolas" else "Nikolas"
-                    st.warning(f"🦆 {stats['seq_at_p']} venceu a(s) última(s) **{stats['seq_at_q']}** partida(s) do seu filho {perdedor}!")
+                    st.warning(f"🦆 **Humilhação:** {stats['seq_at_p']} venceu a(s) última(s) **{stats['seq_at_q']}** partida(s) do seu filho {perdedor}!")
                 elif stats['seq_at_q'] > 0:
                     st.info(f"🔵 **{stats['seq_at_p']}** venceu a(s) última(s) **{stats['seq_at_q']}** partida(s)!")
                 else:
                     st.info(f"🔘 Última partida foi {stats['seq_at_p']}")
 
-                # Easter Egg Muralha
+                # Easter Egg Muralha (Seu código corrigido)
                 if stats['cur_cs_nik'] > 0:
-                    st.markdown(f"<small>🛡️Nikolas está há **{stats['cur_cs_nik']}** partida(s) sem tomar gol.</small>", unsafe_allow_html=True)
+                    st.info(f"🛡️ Nikolas está há **{stats['cur_cs_nik']}** partida(s) sem tomar gol.")
                 if stats['cur_cs_rod'] > 0:
-                    st.markdown(f"<small>🛡️Rodrigo está há **{stats['cur_cs_rod']}** partida(s) sem tomar gol.</small>", unsafe_allow_html=True)
+                    st.info(f"🛡️ Rodrigo está há **{stats['cur_cs_rod']}** partida(s) sem tomar gol.")
             
             with c_s2:
                 st.subheader("🏆 Recordes de Sequência")
@@ -438,14 +442,6 @@ with tab1:
                 else:
                     st.success(f"👑 A maior sequência histórica é de **Rodrigo** com **{stats['max_rod']}** vitórias seguidas.")
                     st.info(f"A maior sequência histórica de **Nikolas** é de **{stats['max_nik']}** vitórias seguidas.")
-
-            # GRÁFICO DE CORRIDA DOS CAMPEÕES
-            st.markdown("### 📈 Corrida dos Campeões (Evolução de Vitórias)")
-            df_chart = stats['df_completo'].copy().sort_values('id')
-            df_chart['Vitórias Nikolas'] = (df_chart['vencedor'] == 'Nikolas').cumsum()
-            df_chart['Vitórias Rodrigo'] = (df_chart['vencedor'] == 'Rodrigo').cumsum()
-            df_chart['Partida'] = range(1, len(df_chart) + 1)
-            st.line_chart(df_chart.set_index('Partida')[['Vitórias Nikolas', 'Vitórias Rodrigo']], color=["#4DE17C", "#FF4B4B"])
 
             st.markdown("### 📊 Estatísticas Detalhadas")
             c1, c2, c3 = st.columns(3)
@@ -461,7 +457,78 @@ with tab1:
                 st.markdown("**Aproveitamento Geral:**")
                 st.write(f"📈 Nikolas: {(stats['v_nik']/stats['total_jogos'])*100:.1f}%")
                 st.write(f"📈 Rodrigo: {(stats['v_rod']/stats['total_jogos'])*100:.1f}%")
+
+            # --- RANKING DE AMASSO (NOVA FUNCIONALIDADE) ---
+            st.markdown("---")
+            st.markdown("### 🥊 Ranking de Amasso (Saldo de Gols nas Vitórias)")
+            
+            df_v_nik_rank = df_filtrado[df_filtrado['vencedor'] == 'Nikolas'].copy()
+            media_saldo_nik = df_v_nik_rank['dif'].mean() if not df_v_nik_rank.empty else 0.0
                 
+            df_v_rod_rank = df_filtrado[df_filtrado['vencedor'] == 'Rodrigo'].copy()
+            media_saldo_rod = df_v_rod_rank['dif'].mean() if not df_v_rod_rank.empty else 0.0
+            
+            c_gol1, c_gol2 = st.columns(2)
+            with c_gol1:
+                st.metric("Média de Saldo nas Vitórias (Nikolas)", f"+{media_saldo_nik:.1f} gols")
+                if media_saldo_nik > media_saldo_rod and media_saldo_nik > 0:
+                    st.caption("💪 Costuma amassar mais nas vitórias!")
+            with c_gol2:
+                st.metric("Média de Saldo nas Vitórias (Rodrigo)", f"+{media_saldo_rod:.1f} gols")
+                if media_saldo_rod > media_saldo_nik and media_saldo_rod > 0:
+                    st.caption("💪 Costuma amassar mais nas vitórias!")
+
+            # --- RAIO-X DE CLÁSSICOS & KRYPTONITA (NOVA FUNCIONALIDADE) ---
+            st.markdown("---")
+            st.markdown("### ⚔️ Raio-X de Clássicos e Kryptonita")
+            
+            # Cálculo de Kryptonita
+            df_v_rod_k = df_filtrado[df_filtrado['vencedor'] == 'Rodrigo']
+            times_rod_venceu = pd.concat([
+                df_v_rod_k[df_v_rod_k['jogador_casa'] == 'Rodrigo']['time_casa'],
+                df_v_rod_k[df_v_rod_k['jogador_fora'] == 'Rodrigo']['time_fora']
+            ])
+            krypto_nik = times_rod_venceu.value_counts().idxmax() if not times_rod_venceu.empty else "Nenhum"
+            
+            df_v_nik_k = df_filtrado[df_filtrado['vencedor'] == 'Nikolas']
+            times_nik_venceu = pd.concat([
+                df_v_nik_k[df_v_nik_k['jogador_casa'] == 'Nikolas']['time_casa'],
+                df_v_nik_k[df_v_nik_k['jogador_fora'] == 'Nikolas']['time_fora']
+            ])
+            krypto_rod = times_nik_venceu.value_counts().idxmax() if not times_nik_venceu.empty else "Nenhum"
+            
+            st.warning(f"☢️ **Kryptonita do Nikolas:** Sempre que o Rodrigo joga de **{krypto_nik}**, a vida do Nikolas fica difícil.")
+            st.warning(f"☢️ **Kryptonita do Rodrigo:** Sempre que o Nikolas escolhe o **{krypto_rod}**, o Rodrigo passa mal.")
+
+            st.markdown("<br><b>Filtrar um Clássico Específico:</b>", unsafe_allow_html=True)
+            c_rx1, c_rx2 = st.columns(2)
+            lista_de_times = list(TEAMS.keys())
+            idx_rm = lista_de_times.index("Real Madrid") if "Real Madrid" in lista_de_times else 0
+            idx_fcb = lista_de_times.index("FC Barcelona") if "FC Barcelona" in lista_de_times else 0
+            
+            with c_rx1: rx_time_nik = st.selectbox("Time do Nikolas:", lista_de_times, index=idx_rm, key="rx_n")
+            with c_rx2: rx_time_rod = st.selectbox("Time do Rodrigo:", lista_de_times, index=idx_fcb, key="rx_r")
+            
+            df_rx = df_filtrado[
+                ((df_filtrado['jogador_casa'] == 'Nikolas') & (df_filtrado['time_casa'] == rx_time_nik) & 
+                 (df_filtrado['jogador_fora'] == 'Rodrigo') & (df_filtrado['time_fora'] == rx_time_rod)) |
+                ((df_filtrado['jogador_fora'] == 'Nikolas') & (df_filtrado['time_fora'] == rx_time_nik) & 
+                 (df_filtrado['jogador_casa'] == 'Rodrigo') & (df_filtrado['time_casa'] == rx_time_rod))
+            ]
+            
+            if not df_rx.empty:
+                rx_v_nik = len(df_rx[df_rx['vencedor'] == 'Nikolas'])
+                rx_v_rod = len(df_rx[df_rx['vencedor'] == 'Rodrigo'])
+                rx_emp = len(df_rx[df_rx['vencedor'] == 'Empate'])
+                
+                m_rx1, m_rx2, m_rx3, m_rx4 = st.columns(4)
+                m_rx1.metric("Jogos no Clássico", len(df_rx))
+                m_rx2.metric("Vitórias Nikolas", rx_v_nik)
+                m_rx3.metric("Vitórias Rodrigo", rx_v_rod)
+                m_rx4.metric("Empates", rx_emp)
+            else:
+                st.info("Vocês ainda não jogaram este clássico nesta edição!")
+
             st.markdown("---")
             
             st.markdown("### 👕 Times mais utilizados")
