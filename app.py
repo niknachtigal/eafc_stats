@@ -39,14 +39,6 @@ st.markdown("""
         @media (min-width: 768px) {
             details.mobile-legend { display: none !important; }
         }
-        
-        /* RESPONSIVIDADE: Histórico (PC vs Celular) */
-        .hist-desktop { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 5px 0; }
-        .hist-mobile { display: none; }
-        @media (max-width: 768px) {
-            .hist-desktop { display: none !important; }
-            .hist-mobile { display: block !important; padding: 5px 0; }
-        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -231,7 +223,7 @@ with col_title:
         nik_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_nik']]) if stats_globais['badges_nik'] else ""
         rod_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_rod']]) if stats_globais['badges_rod'] else ""
 
-        # HTML COLADO NA MARGEM PARA EVITAR BUG DO MARKDOWN
+        # HTML COLADO NA MARGEM PARA EVITAR O BUG DE MARKDOWN
         title_html = f"""
 <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
     <span style='line-height: 1.2;'>🎮 FIFA EA FC -</span>
@@ -713,6 +705,9 @@ if tab2:
 with tab3:
     st.subheader("📜 Histórico de Jogos")
     
+    # CSS para centralizar os botões de excluir na nova visualização
+    st.markdown("<style>div.stButton > button {margin-top: 15px;}</style>", unsafe_allow_html=True)
+    
     if not df_partidas.empty:
         df_partidas['data_dt'] = pd.to_datetime(df_partidas['data'])
         
@@ -754,59 +749,47 @@ with tab3:
                 pen_html = f"🎯 Pên: {row['vencedor_penaltis']}" if row['foi_penaltis'] == "Sim" else "&nbsp;"
                 
                 with st.container(border=True):
+                    # Usamos uma divisão híbrida para o botão lixeira encaixar perfeito 
                     c_hist, c_del = st.columns([9.5, 0.5])
                     
                     with c_hist:
-                        # BLOCO HTML SEM IDENTAÇÃO (MARGEM ESQUERDA) PARA EVITAR BUG DO MARKDOWN NO STREAMLIT
+                        # BLOCO HTML UNIFICADO E COLADO NA MARGEM (Layout Único tipo TV)
                         html_hist = f"""
-<div class="hist-desktop">
-    <div style="flex: 1.5;">
-        <p style='margin: 0;'>📅 <b>{data_br}</b><br><small style='color: gray;'>🎮 {row['versao_jogo']}</small></p>
-    </div>
-    <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-end; gap: 15px;">
-        <span style='font-size: 16px; font-weight: bold;'>{row['jogador_casa']} ({tc})</span>
-        <img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>
-    </div>
-    <div style="flex: 1.5; text-align: center;">
-        <h3 style='margin: 0;'>{row['gols_casa']} x {row['gols_fora']}</h3>
-        <p style='margin: 0; font-size:12px; color:gray; min-height: 14px;'>{pen_html}</p>
-    </div>
-    <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
-        <img src='{TEAMS.get(tf)}' style='width: 30px; height: 30px; object-fit: contain;'>
-        <span style='font-size: 16px; font-weight: bold;'>({tf}) {row['jogador_fora']}</span>
-    </div>
+<div style="width: 100%; padding: 5px 0;">
+<div style="margin-bottom: 10px;">
+<span style="font-size: 13px; color: #E0E0E0;">📅 <b>{data_br}</b></span>
+<span style="font-size: 12px; color: gray; margin-left: 10px;">🎮 {row['versao_jogo']}</span>
 </div>
-
-<div class="hist-mobile" style="padding: 10px 0;">
-    <div style="text-align: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px;">
-        <span style="font-size: 13px; color: #E0E0E0;">📅 <b>{data_br}</b></span>
-        <span style="font-size: 12px; color: gray; margin-left: 10px;">🎮 {row['versao_jogo']}</span>
-    </div>
-    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <img src="{TEAMS.get(tc)}" style="width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px;">
-            <span style="font-size: 14px; font-weight: bold; color: #E0E0E0; line-height: 1.2;">{row['jogador_casa']}</span>
-            <span style="font-size: 11px; color: #A0A0A0; line-height: 1.2;">{tc}</span>
-        </div>
-        
-        <div style="flex: 0.8; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <span style="font-size: 28px; font-weight: 900; color: #ffffff; letter-spacing: 1px;">{row['gols_casa']} x {row['gols_fora']}</span>
-            <span style="font-size: 11px; color: #A0A0A0; margin-top: 4px;">{pen_html}</span>
-        </div>
-        
-        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <img src="{TEAMS.get(tf)}" style="width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px;">
-            <span style="font-size: 14px; font-weight: bold; color: #E0E0E0; line-height: 1.2;">{row['jogador_fora']}</span>
-            <span style="font-size: 11px; color: #A0A0A0; line-height: 1.2;">{tf}</span>
-        </div>
-    </div>
+<div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+<div style="flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+<div style="text-align: right; line-height: 1.1;">
+<div style="font-size: 15px; font-weight: bold; color: #E0E0E0;">{row['jogador_casa']}</div>
+<div style="font-size: 12px; color: #A0A0A0;">{tc}</div>
+</div>
+<img src="{TEAMS.get(tc)}" style="width: 32px; height: 32px; object-fit: contain;">
+<div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_casa']}</div>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px;">
+<div style="font-size: 24px; font-weight: 900; font-style: italic; color: #ffffff; line-height: 1;">X</div>
+</div>
+<div style="flex: 1; display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
+<div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_fora']}</div>
+<img src="{TEAMS.get(tf)}" style="width: 32px; height: 32px; object-fit: contain;">
+<div style="text-align: left; line-height: 1.1;">
+<div style="font-size: 15px; font-weight: bold; color: #E0E0E0;">{row['jogador_fora']}</div>
+<div style="font-size: 12px; color: #A0A0A0;">{tf}</div>
+</div>
+</div>
+</div>
+<div style="text-align: center; font-size: 11px; color: #A0A0A0; margin-top: 5px; min-height: 14px;">
+{pen_html}
+</div>
 </div>
 """
                         st.markdown(html_hist, unsafe_allow_html=True)
                         
                     with c_del:
                         if st.session_state["autenticado"]:
-                            st.markdown("<style>div.stButton > button {margin-top: 15px;}</style>", unsafe_allow_html=True)
                             if st.button("🗑️", key=f"del_{row['id']}"):
                                 excluir_partida(row['id'])
                                 st.rerun()
