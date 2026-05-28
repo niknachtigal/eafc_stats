@@ -167,10 +167,11 @@ def calcular_estatisticas(df):
         "nik_top_teams": nik_times.value_counts().head(3).to_dict() if not nik_times.empty else {},
         "rod_top_teams": rod_times.value_counts().head(3).to_dict() if not rod_times.empty else {},
         "badges_nik": badges_nik, "badges_rod": badges_rod,
-        "cur_cs_nik": cur_cs_nik, "cur_cs_rod": cur_cs_rod
+        "cur_cs_nik": cur_cs_nik, "cur_cs_rod": cur_cs_rod,
+        "df_completo": df
     }
 
-# Lemos os dados AQUI para poder usar as informações no título!
+# Lemos os dados para poder usar as informações no título
 df_partidas = ler_partidas()
 stats_globais = calcular_estatisticas(df_partidas)
 
@@ -181,25 +182,26 @@ col_title, col_login = st.columns([5, 1])
 
 with col_title:
     if stats_globais:
-        # Dicionário explicativo para o Tooltip (Hover)
         badges_desc = {
             "🛡️": "Muralha: Maior número de jogos sem sofrer gols",
             "🎯": "Frio e Calculista: Maior taxa de vitória nos pênaltis",
             "🔥": "Máquina de Gols: Maior média de gols marcados"
         }
-        nik_badges_html = "".join([f"<span title='{badges_desc[b]}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_nik']])
-        rod_badges_html = "".join([f"<span title='{badges_desc[b]}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_rod']])
+        nik_badges_html = "".join([f"<span title='{badges_desc[b]}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_nik']]) if stats_globais['badges_nik'] else ""
+        rod_badges_html = "".join([f"<span title='{badges_desc[b]}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_rod']]) if stats_globais['badges_rod'] else ""
 
-        # HTML Personalizado para criar o visual exato da imagem
+        # NOVO ALINHAMENTO DO TÍTULO COM FLEX-START
         title_html = f"""
-        <div style='display: flex; align-items: center; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 20px;'>
-            🎮 FIFA EA FC - 
-            <div style='text-align: center; display: inline-block; line-height: 1.1;'>
-                Nikolas<br><span style='font-size: 1.2rem;'>{nik_badges_html}</span>
+        <div style='display: flex; align-items: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 20px;'>
+            <span style='line-height: 1.1;'>🎮 FIFA EA FC -</span>
+            <div style='text-align: center; display: flex; flex-direction: column; align-items: center; line-height: 1.1;'>
+                <span>Nikolas</span>
+                <div style='font-size: 1.3rem; margin-top: 5px; min-height: 25px;'>{nik_badges_html}</div>
             </div>
-            <span style='margin: 0 5px;'>vs</span>
-            <div style='text-align: center; display: inline-block; line-height: 1.1;'>
-                Rodrigo<br><span style='font-size: 1.2rem;'>{rod_badges_html}</span>
+            <span style='line-height: 1.1; margin: 0 5px;'>vs</span>
+            <div style='text-align: center; display: flex; flex-direction: column; align-items: center; line-height: 1.1;'>
+                <span>Rodrigo</span>
+                <div style='font-size: 1.3rem; margin-top: 5px; min-height: 25px;'>{rod_badges_html}</div>
             </div>
         </div>
         """
@@ -209,7 +211,7 @@ with col_title:
 
 with col_login:
     # Espaçamento para alinhar o botão de login com o título
-    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
     
     if not st.session_state["autenticado"]:
         with st.popover("🔐 Acesso Restrito", use_container_width=True):
@@ -379,7 +381,6 @@ TEAMS = dict(sorted(TEAMS.items()))
 
 VERSOES = ["EA FC 27", "EA FC 28", "EA FC 29", "EA FC 30"]
 
-
 # ==============================================================================
 # ABAS DINÂMICAS BASEADAS NA AUTENTICAÇÃO
 # ==============================================================================
@@ -428,7 +429,7 @@ with tab1:
                 else:
                     st.info(f"🔘 Última partida foi {stats['seq_at_p']}")
 
-                # Easter Egg Muralha (Seu código corrigido)
+                # Easter Egg Muralha (Corrigido conforme seu feedback)
                 if stats['cur_cs_nik'] > 0:
                     st.info(f"🛡️ Nikolas está há **{stats['cur_cs_nik']}** partida(s) sem tomar gol.")
                 if stats['cur_cs_rod'] > 0:
@@ -442,6 +443,14 @@ with tab1:
                 else:
                     st.success(f"👑 A maior sequência histórica é de **Rodrigo** com **{stats['max_rod']}** vitórias seguidas.")
                     st.info(f"A maior sequência histórica de **Nikolas** é de **{stats['max_nik']}** vitórias seguidas.")
+
+            # GRÁFICO DE CORRIDA DOS CAMPEÕES
+            st.markdown("### 📈 Corrida dos Campeões (Evolução de Vitórias)")
+            df_chart = stats['df_completo'].copy().sort_values('id')
+            df_chart['Vitórias Nikolas'] = (df_chart['vencedor'] == 'Nikolas').cumsum()
+            df_chart['Vitórias Rodrigo'] = (df_chart['vencedor'] == 'Rodrigo').cumsum()
+            df_chart['Partida'] = range(1, len(df_chart) + 1)
+            st.line_chart(df_chart.set_index('Partida')[['Vitórias Nikolas', 'Vitórias Rodrigo']], color=["#4DE17C", "#FF4B4B"])
 
             st.markdown("### 📊 Estatísticas Detalhadas")
             c1, c2, c3 = st.columns(3)
@@ -458,7 +467,7 @@ with tab1:
                 st.write(f"📈 Nikolas: {(stats['v_nik']/stats['total_jogos'])*100:.1f}%")
                 st.write(f"📈 Rodrigo: {(stats['v_rod']/stats['total_jogos'])*100:.1f}%")
 
-            # --- RANKING DE AMASSO (NOVA FUNCIONALIDADE) ---
+            # --- RANKING DE AMASSO (SALDO DE GOLS) ---
             st.markdown("---")
             st.markdown("### 🥊 Ranking de Amasso (Saldo de Gols nas Vitórias)")
             
@@ -478,11 +487,10 @@ with tab1:
                 if media_saldo_rod > media_saldo_nik and media_saldo_rod > 0:
                     st.caption("💪 Costuma amassar mais nas vitórias!")
 
-            # --- RAIO-X DE CLÁSSICOS & KRYPTONITA (NOVA FUNCIONALIDADE) ---
+            # --- RAIO-X DE CLÁSSICOS & KRYPTONITA ---
             st.markdown("---")
             st.markdown("### ⚔️ Raio-X de Clássicos e Kryptonita")
             
-            # Cálculo de Kryptonita
             df_v_rod_k = df_filtrado[df_filtrado['vencedor'] == 'Rodrigo']
             times_rod_venceu = pd.concat([
                 df_v_rod_k[df_v_rod_k['jogador_casa'] == 'Rodrigo']['time_casa'],
