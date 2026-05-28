@@ -254,7 +254,7 @@ with col_title:
             # HTML COLADO NA MARGEM
             legend_html = f"""
 <details class="mobile-legend" style="background-color: #1E1E1E; padding: 10px 15px; border-radius: 8px; border: 1px solid #333333; margin-bottom: 15px;">
-    <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ℹ️ Significado das Medalhas</summary>
+    <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ⓘ Significado das Medalhas</summary>
     <div style="margin-top: 12px; font-size: 13px; color: #A0A0A0; line-height: 1.4;">
         {legend_items}
     </div>
