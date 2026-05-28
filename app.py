@@ -271,7 +271,7 @@ with col_title:
             st.markdown(legend_html, unsafe_allow_html=True)
             
     else:
-        st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
+        st.title("🎮 Nikolas vs Rodrigo")
 
 with col_login:
     # Espaçamento para alinhar o botão de login com o título
