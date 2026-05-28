@@ -7,7 +7,7 @@ from supabase import create_client, Client
 st.set_page_config(page_title="FIFA - Nik vs Digo", page_icon="🎮", layout="wide")
 
 # ==============================================================================
-# ESTÉTICA PRETO FOSCO (DARK MODE CUSTOMIZADO)
+# ESTÉTICA PRETO FOSCO (DARK MODE CUSTOMIZADO) E RESPONSIVIDADE
 # ==============================================================================
 st.markdown("""
     <style>
@@ -35,25 +35,17 @@ st.markdown("""
             border-bottom-color: #4DE17C !important;
         }
         
-        /* Oculta a legenda de medalhas no PC, mostra apenas no celular */
+        /* RESPONSIVIDADE: Oculta a legenda sanfona no PC, mostra apenas no celular */
         @media (min-width: 768px) {
-            .mobile-legend { display: none !important; }
+            details.mobile-legend { display: none !important; }
         }
-        .mobile-legend {
-            font-size: 0.85rem;
-            color: #A0A0A0;
-            background-color: #1E1E1E;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #333333;
-            margin-top: 10px;
-        }
-        .mobile-legend p {
-            margin: 0 0 5px 0;
-            line-height: 1.3;
-        }
-        .mobile-legend p:last-child {
-            margin: 0;
+        
+        /* RESPONSIVIDADE: Histórico (PC vs Celular) */
+        .hist-desktop { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 5px 0; }
+        .hist-mobile { display: none; }
+        @media (max-width: 768px) {
+            .hist-desktop { display: none !important; }
+            .hist-mobile { display: block !important; padding: 5px 0; }
         }
     </style>
 """, unsafe_allow_html=True)
@@ -241,7 +233,7 @@ with col_title:
 
         title_html = f"""
         <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
-            <span style='line-height: 1.2;'>🎮 </span>
+            <span style='line-height: 1.2;'>🎮 FIFA EA FC -</span>
             <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
                 <span style='line-height: 1.2;'>Nikolas</span>
                 <span style='font-size: 1.3rem; margin-top: 2px;'>{nik_badges_html}</span>
@@ -255,23 +247,30 @@ with col_title:
         """
         st.markdown(title_html, unsafe_allow_html=True)
 
-        # ADICIONADO PARA O CELULAR (Legenda Oculta no PC e Mostra Apenas Ativas)
+        # ADICIONADO PARA O CELULAR (Sanfona nativa HTML oculta no PC e Mostra Apenas Ativas)
         active_badges = set(stats_globais['badges_nik'] + stats_globais['badges_rod'])
         if active_badges:
-            legend_html = "<div class='mobile-legend'><div style='margin-bottom: 5px; color: #E0E0E0;'><b>ℹ️ Legenda das Medalhas</b></div>"
-            # Iteramos pelas descrições para manter a ordem e formatação
+            legend_items = ""
             for b, desc in badges_desc.items():
                 if b in active_badges:
                     if ":" in desc:
                         nome, texto = desc.split(":", 1)
-                        legend_html += f"<p>{b} <b>{nome}</b>:{texto}</p>"
+                        legend_items += f"<p style='margin: 0 0 8px 0;'>{b} <b style='color:#E0E0E0;'>{nome}</b>:{texto}</p>"
                     else:
-                        legend_html += f"<p>{b} {desc}</p>"
-            legend_html += "</div>"
+                        legend_items += f"<p style='margin: 0 0 8px 0;'>{b} {desc}</p>"
+                        
+            legend_html = f"""
+            <details class="mobile-legend" style="background-color: #1E1E1E; padding: 10px 15px; border-radius: 8px; border: 1px solid #333333; margin-bottom: 15px;">
+                <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ℹ️ Significado das Medalhas</summary>
+                <div style="margin-top: 12px; font-size: 13px; color: #A0A0A0; line-height: 1.4;">
+                    {legend_items}
+                </div>
+            </details>
+            """
             st.markdown(legend_html, unsafe_allow_html=True)
             
     else:
-        st.title("🎮 Nikolas vs Rodrigo")
+        st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
 
 with col_login:
     # Espaçamento para alinhar o botão de login com o título
@@ -713,6 +712,9 @@ if tab2:
 with tab3:
     st.subheader("📜 Histórico de Jogos")
     
+    # CSS para centralizar os botões de excluir na nova visualização
+    st.markdown("<style>div.stButton > button {margin-top: 15px;}</style>", unsafe_allow_html=True)
+    
     if not df_partidas.empty:
         df_partidas['data_dt'] = pd.to_datetime(df_partidas['data'])
         
@@ -748,44 +750,59 @@ with tab3:
         if not df_historico.empty:
             for _, row in df_historico.iloc[::-1].iterrows():
                 data_br = row['data_dt'].strftime("%d/%m/%Y")
+                tc = row['time_casa']
+                tf = row['time_fora']
+                
+                # HTML dos Penaltis condicional e com espaço fixo para alinhar a Grid do Mobile
+                pen_html = f"🎯 Pênaltis: {row['vencedor_penaltis']}" if row['foi_penaltis'] == "Sim" else "&nbsp;"
                 
                 with st.container(border=True):
-                    c_dt, c_casa, c_placar, c_fora, c_del = st.columns([1.5, 3.5, 1.5, 3.5, 0.5])
+                    # Usamos uma divisão híbrida [9.5, 0.5] para o botão lixeira encaixar perfeito 
+                    c_hist, c_del = st.columns([9.5, 0.5])
                     
-                    with c_dt:
-                        st.markdown(f"<p style='margin-top: 15px;'>📅 <b>{data_br}</b><br><small style='color: gray;'>🎮 {row['versao_jogo']}</small></p>", unsafe_allow_html=True)
-                    
-                    with c_casa:
-                        tc = row['time_casa']
-                        st.markdown(
-                            f"<div style='display: flex; align-items: center; justify-content: flex-end; gap: 15px; height: 100%; margin-top: 10px;'>"
-                            f"<span style='font-size: 16px; font-weight: bold;'>{row['jogador_casa']} ({tc})</span>"
-                            f"<img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>"
-                            f"</div>", 
-                            unsafe_allow_html=True
-                        )
-                        
-                    with c_placar:
-                        st.markdown(
-                            f"<h3 style='text-align: center; margin-top: 10px;'>{row['gols_casa']} x {row['gols_fora']}</h3>", 
-                            unsafe_allow_html=True
-                        )
-                        if row['foi_penaltis'] == "Sim":
-                            st.markdown(f"<p style='text-align:center; font-size:12px; color:gray; margin-top: -10px;'>🎯 Pênaltis: {row['vencedor_penaltis']}</p>", unsafe_allow_html=True)
-                        
-                    with c_fora:
-                        tf = row['time_fora']
-                        st.markdown(
-                            f"<div style='display: flex; align-items: center; justify-content: flex-start; gap: 15px; height: 100%; margin-top: 10px;'>"
-                            f"<img src='{TEAMS.get(tf)}' style='width: 30px; height: 30px; object-fit: contain;'>"
-                            f"<span style='font-size: 16px; font-weight: bold;'>({tf}) {row['jogador_fora']}</span>"
-                            f"</div>", 
-                            unsafe_allow_html=True
-                        )
+                    with c_hist:
+                        # Bloco HTML que decide sozinho se mostra o Layout Largo (PC) ou a Grade (Celular)
+                        html_hist = f"""
+                        <div class="hist-desktop">
+                            <div style="flex: 1.5;">
+                                <p style='margin: 0;'>📅 <b>{data_br}</b><br><small style='color: gray;'>🎮 {row['versao_jogo']}</small></p>
+                            </div>
+                            <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-end; gap: 15px;">
+                                <span style='font-size: 16px; font-weight: bold;'>{row['jogador_casa']} ({tc})</span>
+                                <img src='{TEAMS.get(tc)}' style='width: 30px; height: 30px; object-fit: contain;'>
+                            </div>
+                            <div style="flex: 1.5; text-align: center;">
+                                <h3 style='margin: 0;'>{row['gols_casa']} x {row['gols_fora']}</h3>
+                                <p style='margin: 0; font-size:12px; color:gray;'>{pen_html}</p>
+                            </div>
+                            <div style="flex: 3.5; display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+                                <img src='{TEAMS.get(tf)}' style='width: 30px; height: 30px; object-fit: contain;'>
+                                <span style='font-size: 16px; font-weight: bold;'>({tf}) {row['jogador_fora']}</span>
+                            </div>
+                        </div>
+
+                        <div class="hist-mobile">
+                            <p style="margin: 0 0 15px 0; color: #E0E0E0; font-size: 14px;">
+                                📅 <b>{data_br}</b> &nbsp;&nbsp; <small style='color: gray;'>🎮 {row['versao_jogo']}</small>
+                            </p>
+                            <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center;">
+                                <div style="text-align: right; font-size: 15px; font-weight: bold;">{row['jogador_casa']} ({tc})</div>
+                                <div style="display: flex; justify-content: center;"><img src="{TEAMS.get(tc)}" style="width:30px; height:30px; object-fit: contain;"></div>
+                                <div style="font-size: 24px; font-weight: bold; width: 30px; text-align: center;">{row['gols_casa']}</div>
+
+                                <div style="text-align: center; font-size: 38px; font-weight: 900; font-style: italic; line-height: 0.8; margin-right: 10px; color: #ffffff;">X</div>
+                                <div style="grid-column: 2 / 4; text-align: left; font-size: 12px; color: gray;">{pen_html}</div>
+
+                                <div style="text-align: right; font-size: 15px; font-weight: bold;">{row['jogador_fora']} ({tf})</div>
+                                <div style="display: flex; justify-content: center;"><img src="{TEAMS.get(tf)}" style="width:30px; height:30px; object-fit: contain;"></div>
+                                <div style="font-size: 24px; font-weight: bold; width: 30px; text-align: center;">{row['gols_fora']}</div>
+                            </div>
+                        </div>
+                        """
+                        st.markdown(html_hist, unsafe_allow_html=True)
                         
                     with c_del:
                         if st.session_state["autenticado"]:
-                            st.markdown("<style>div.stButton > button {margin-top: 10px;}</style>", unsafe_allow_html=True)
                             if st.button("🗑️", key=f"del_{row['id']}"):
                                 excluir_partida(row['id'])
                                 st.rerun()
