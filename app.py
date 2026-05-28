@@ -206,7 +206,6 @@ col_title, col_login = st.columns([5, 1])
 
 with col_title:
     if stats_globais:
-        # Puxa o número de jogos da sequência para o tooltip do Pato
         seq_perdedor = stats_globais['seq_at_q']
         
         badges_desc = {
@@ -219,9 +218,8 @@ with col_title:
         nik_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_nik']]) if stats_globais['badges_nik'] else ""
         rod_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_rod']]) if stats_globais['badges_rod'] else ""
 
-        # NOVO ALINHAMENTO DO TÍTULO COM FLEX-START CORRIGIDO
         title_html = f"""
-        <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 20px;'>
+        <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
             <span style='line-height: 1.2;'>🎮 FIFA EA FC -</span>
             <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
                 <span style='line-height: 1.2;'>Nikolas</span>
@@ -235,6 +233,16 @@ with col_title:
         </div>
         """
         st.markdown(title_html, unsafe_allow_html=True)
+
+        # ADICIONADO PARA O CELULAR (Sanfona de Legenda)
+        with st.expander("ℹ️ Significado das Medalhas"):
+            st.markdown(f"""
+            - 👑 **Rei do Fifa:** Maior número de vitórias, média de gols, sequência histórica e saldo nas vitórias.
+            - 🛡️ **Muralha:** Maior número de jogos sem sofrer gols.
+            - 🎯 **Frio e Calculista:** Maior taxa de vitória nos pênaltis.
+            - ⚽ **Máquina de Gols:** Maior média de gols marcados.
+            - 🦆 **Pato:** Perdeu os últimos **{seq_perdedor}** jogos.
+            """)
     else:
         st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
 
@@ -458,7 +466,7 @@ with tab1:
                 else:
                     st.info(f"🔘 Última partida foi {stats['seq_at_p']}")
 
-                # Easter Egg Muralha (Corrigido conforme seu feedback)
+                # Easter Egg Muralha
                 if stats['cur_cs_nik'] > 0:
                     st.info(f"🛡️ Nikolas está há **{stats['cur_cs_nik']}** partida(s) sem tomar gol.")
                 if stats['cur_cs_rod'] > 0:
@@ -474,7 +482,7 @@ with tab1:
                     st.info(f"A maior sequência histórica de **Nikolas** é de **{stats['max_nik']}** vitórias seguidas.")
 
             # GRÁFICO DE CORRIDA DOS CAMPEÕES
-            st.markdown("### 📈 Corrida dos Campeões (Evolução de Vitórias)")
+            st.markdown("### 📈 Evolução de Vitórias")
             df_chart = stats['df_completo'].copy().sort_values('id')
             df_chart['Vitórias Nikolas'] = (df_chart['vencedor'] == 'Nikolas').cumsum()
             df_chart['Vitórias Rodrigo'] = (df_chart['vencedor'] == 'Rodrigo').cumsum()
