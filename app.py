@@ -561,8 +561,8 @@ with tab1:
             ])
             krypto_rod = times_nik_venceu.value_counts().idxmax() if not times_nik_venceu.empty else "Nenhum"
             
-            st.warning(f"☢️ **Kryptonita do Nikolas:** Sempre que o Rodrigo joga de **{krypto_nik}**, a vida do Nikolas fica difícil.")
-            st.warning(f"☢️ **Kryptonita do Rodrigo:** Sempre que o Nikolas escolhe o **{krypto_rod}**, o Rodrigo passa mal.")
+            st.warning(f"☢️ Sempre que o Rodrigo joga de **{krypto_nik}**, a vida do Nikolas fica difícil.")
+            st.warning(f"☢️ Sempre que o Nikolas escolhe o **{krypto_rod}**, o Rodrigo passa mal.")
 
             st.markdown("<br><b>Filtrar um Clássico Específico:</b>", unsafe_allow_html=True)
             c_rx1, c_rx2 = st.columns(2)
