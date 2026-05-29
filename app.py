@@ -272,7 +272,7 @@ with col_login:
     if not st.session_state["autenticado"]:
         with st.popover("🔐 Acesso Restrito", use_container_width=True):
             senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
-            if st.button("Entrar", use_container_width=True):
+            submit = st.form_submit_button("Entrar", use_container_width=True):
                 if senha_digitada == st.secrets["APP_PASSWORD"]:
                     st.session_state["autenticado"] = True
                     st.rerun()
