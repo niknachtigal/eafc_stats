@@ -226,7 +226,7 @@ with col_title:
         # HTML COLADO NA MARGEM PARA EVITAR O BUG DE MARKDOWN
         title_html = f"""
 <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
-    <span style='line-height: 1.2;'>🎮 </span>
+    <span style='line-height: 1.2;'>🎮 FIFA EA FC -</span>
     <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
         <span style='line-height: 1.2;'>Nikolas</span>
         <span style='font-size: 1.3rem; margin-top: 2px;'>{nik_badges_html}</span>
@@ -254,7 +254,7 @@ with col_title:
             # HTML COLADO NA MARGEM
             legend_html = f"""
 <details class="mobile-legend" style="background-color: #1E1E1E; padding: 10px 15px; border-radius: 8px; border: 1px solid #333333; margin-bottom: 15px;">
-    <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ⓘ Significado das Medalhas</summary>
+    <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ℹ️ Significado das Medalhas</summary>
     <div style="margin-top: 12px; font-size: 13px; color: #A0A0A0; line-height: 1.4;">
         {legend_items}
     </div>
@@ -266,18 +266,21 @@ with col_title:
         st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
 
 with col_login:
-    # Espaçamento para alinhar o botão de login com o título
     st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
     
     if not st.session_state["autenticado"]:
         with st.popover("🔐 Acesso Restrito", use_container_width=True):
-            senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
-            submit = st.form_submit_button("Entrar", use_container_width=True):
-                if senha_digitada == st.secrets["APP_PASSWORD"]:
-                    st.session_state["autenticado"] = True
-                    st.rerun()
-                else:
-                    st.error("Incorreta!")
+            # Substituído por st.form para o botão aceitar a tecla Enter!
+            with st.form("form_login", border=False):
+                senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
+                btn_entrar = st.form_submit_button("Entrar", use_container_width=True)
+                
+                if btn_entrar:
+                    if senha_digitada == st.secrets["APP_PASSWORD"]:
+                        st.session_state["autenticado"] = True
+                        st.rerun()
+                    else:
+                        st.error("Incorreta!")
     else:
         if st.button("🔓 Sair do Painel", use_container_width=True):
             st.session_state["autenticado"] = False
@@ -705,9 +708,6 @@ if tab2:
 with tab3:
     st.subheader("📜 Histórico de Jogos")
     
-    # CSS para centralizar os botões de excluir na nova visualização
-    st.markdown("<style>div.stButton > button {margin-top: 15px;}</style>", unsafe_allow_html=True)
-    
     if not df_partidas.empty:
         df_partidas['data_dt'] = pd.to_datetime(df_partidas['data'])
         
@@ -749,11 +749,10 @@ with tab3:
                 pen_html = f"🎯 Pên: {row['vencedor_penaltis']}" if row['foi_penaltis'] == "Sim" else "&nbsp;"
                 
                 with st.container(border=True):
-                    # Usamos uma divisão híbrida para o botão lixeira encaixar perfeito 
                     c_hist, c_del = st.columns([9.5, 0.5])
                     
                     with c_hist:
-                        # BLOCO HTML UNIFICADO E COLADO NA MARGEM (Layout Único tipo TV)
+                        # BLOCO HTML SEM IDENTAÇÃO (MARGEM ESQUERDA) PARA EVITAR BUG DO MARKDOWN
                         html_hist = f"""
 <div style="width: 100%; padding: 5px 0;">
 <div style="margin-bottom: 10px;">
@@ -770,7 +769,7 @@ with tab3:
 <div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_casa']}</div>
 </div>
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px;">
-<div style="font-size: 24px; font-weight: 900; color: #ffffff; line-height: 1;">X</div>
+<div style="font-size: 24px; font-weight: 900; font-style: italic; color: #ffffff; line-height: 1;">X</div>
 </div>
 <div style="flex: 1; display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
 <div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_fora']}</div>
@@ -790,6 +789,7 @@ with tab3:
                         
                     with c_del:
                         if st.session_state["autenticado"]:
+                            st.markdown("<style>div.stButton > button {margin-top: 15px;}</style>", unsafe_allow_html=True)
                             if st.button("🗑️", key=f"del_{row['id']}"):
                                 excluir_partida(row['id'])
                                 st.rerun()
