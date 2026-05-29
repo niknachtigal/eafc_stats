@@ -226,7 +226,7 @@ with col_title:
         # HTML COLADO NA MARGEM PARA EVITAR O BUG DE MARKDOWN
         title_html = f"""
 <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
-    <span style='line-height: 1.2;'>🎮 FIFA EA FC -</span>
+    <span style='line-height: 1.2;'>🎮 </span>
     <div style='text-align: center; display: inline-flex; flex-direction: column; align-items: center;'>
         <span style='line-height: 1.2;'>Nikolas</span>
         <span style='font-size: 1.3rem; margin-top: 2px;'>{nik_badges_html}</span>
@@ -769,7 +769,7 @@ with tab3:
 <div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_casa']}</div>
 </div>
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px;">
-<div style="font-size: 24px; font-weight: 900; font-style: italic; color: #ffffff; line-height: 1;">X</div>
+<div style="font-size: 24px; font-weight: 900; color: #ffffff; line-height: 1;">X</div>
 </div>
 <div style="flex: 1; display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
 <div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_fora']}</div>
