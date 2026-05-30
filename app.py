@@ -263,7 +263,7 @@ with col_title:
             st.markdown(legend_html, unsafe_allow_html=True)
             
     else:
-        st.title("🎮 FIFA EA FC - Nikolas vs Rodrigo")
+        st.title("🎮 Nikolas vs Rodrigo")
 
 with col_login:
     st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
