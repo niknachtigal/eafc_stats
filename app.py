@@ -769,7 +769,7 @@ with tab3:
 <div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_casa']}</div>
 </div>
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 50px;">
-<div style="font-size: 24px; font-weight: 900; font-style: italic; color: #ffffff; line-height: 1;">X</div>
+<div style="font-size: 24px; font-weight: 900; color: #ffffff; line-height: 1;">X</div>
 </div>
 <div style="flex: 1; display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
 <div style="font-size: 24px; font-weight: bold; color: #ffffff; width: 25px; text-align: center;">{row['gols_fora']}</div>
