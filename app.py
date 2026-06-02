@@ -537,11 +537,11 @@ with tab1:
             with c_gol1:
                 st.metric("Média de Saldo nas Vitórias (Nikolas)", f"+{media_saldo_nik:.1f} gols")
                 if media_saldo_nik > media_saldo_rod and media_saldo_nik > 0:
-                    st.caption("💪 Costuma amassar mais nas vitórias!")
+                    st.caption("🥅 Costuma amassar mais nas vitórias!")
             with c_gol2:
                 st.metric("Média de Saldo nas Vitórias (Rodrigo)", f"+{media_saldo_rod:.1f} gols")
                 if media_saldo_rod > media_saldo_nik and media_saldo_rod > 0:
-                    st.caption("💪 Costuma amassar mais nas vitórias!")
+                    st.caption("🥅 Costuma amassar mais nas vitórias!")
 
             # --- RAIO-X DE CLÁSSICOS & KRYPTONITA ---
             st.markdown("---")
@@ -696,7 +696,7 @@ if tab2:
             teve_p = st.checkbox("Sim")
             if teve_p:
                 foi_p = "Sim"
-                venc_p = st.radio("Quem levou nos pênaltis?", [jogador_casa, jogador_fora])
+                venc_p = st.radio("Quem ganhou nos pênaltis?", [jogador_casa, jogador_fora])
 
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Salvar partida 💾", use_container_width=True):
