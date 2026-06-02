@@ -746,7 +746,7 @@ with tab3:
                 tc = row['time_casa']
                 tf = row['time_fora']
                 
-                pen_html = f"🎯 Pên: {row['vencedor_penaltis']}" if row['foi_penaltis'] == "Sim" else "&nbsp;"
+                pen_html = f"🎯 Pênaltis: {row['vencedor_penaltis']}" if row['foi_penaltis'] == "Sim" else "&nbsp;"
                 
                 with st.container(border=True):
                     c_hist, c_del = st.columns([9.5, 0.5])
