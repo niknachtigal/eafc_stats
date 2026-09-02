@@ -1,0 +1,23 @@
+name: Keep Streamlit Awake
+
+on:
+  schedule:
+    # Roda a cada 5 dias à meia-noite (UTC)
+    - cron: '0 0 */5 * *'
+  workflow_dispatch: # Permite que você clique para rodar manualmente na aba "Actions"
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Dá permissão para o bot salvar o commit
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create an empty commit
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: rotina automatica para manter Streamlit acordado"
+          git push
