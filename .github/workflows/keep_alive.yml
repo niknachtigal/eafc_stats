@@ -3,7 +3,7 @@ name: Keep Streamlit Awake
 on:
   schedule:
     # Roda a cada 5 dias à meia-noite (UTC)
-    - cron: '0 0 */5 * *'
+    - cron: '0 0 */1 * *'
   workflow_dispatch: # Permite que você clique para rodar manualmente na aba "Actions"
 
 jobs:
