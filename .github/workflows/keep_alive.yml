@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Ping URL
         # Substitua a URL abaixo pelo link real do seu app
-        run: curl -sL -w "%{http_code}\n" "https://nikolas-vs-rodrigo-fifa.streamlit.app/" -o /dev/null
+        run: curl -sL -w "%{http_code}\n" "https://nikolas-vs-rodrigo-fifa.streamlit.app/" -o /dev/null || true
