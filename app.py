@@ -58,7 +58,6 @@ def init_connection():
 
 supabase = init_connection()
 
-# MEMÓRIA INTELIGENTE: Puxa do banco 1 vez só, deixando rápido
 @st.cache_data
 def ler_partidas():
     try:
@@ -84,11 +83,11 @@ def salvar_partida(versao_jogo, data, j_casa, t_casa, g_casa, j_fora, g_fora, t_
         "vencedor_penaltis": venc_pen
     }
     supabase.table("partidas").insert(nova_partida).execute()
-    st.cache_data.clear() # <- O SEGREDO: Limpa a memória pra mostrar o jogo novo na hora!
+    st.cache_data.clear()
 
 def excluir_partida(partida_id):
     supabase.table("partidas").delete().eq("id", partida_id).execute()
-    st.cache_data.clear() # <- Limpa a memória também ao deletar
+    st.cache_data.clear()
 
 # ==============================================================================
 # LÓGICA DE VITÓRIAS E GAMIFICAÇÃO
@@ -103,7 +102,14 @@ def calcular_estatisticas(df):
     if df.empty: return None
     
     df['vencedor'] = df.apply(obter_vencedor, axis=1)
-    vencedores_lista = df.sort_values('id')['vencedor'].tolist()
+    
+    # ORDENAÇÃO CRONOLÓGICA (Crescente) para calcular as sequências e gráficos corretamente
+    if 'data_dt' in df.columns:
+        df_sorted = df.sort_values(by=['data_dt', 'id'], ascending=[True, True])
+    else:
+        df_sorted = df.sort_values('id')
+        
+    vencedores_lista = df_sorted['vencedor'].tolist()
     
     ultima = vencedores_lista[-1]
     seq_at_p, seq_at_q = (ultima, 0)
@@ -122,70 +128,67 @@ def calcular_estatisticas(df):
             if cur_r > max_r: max_r = cur_r
         else: cur_n, cur_r = 0, 0
             
-    df['dif'] = (df['gols_casa'] - df['gols_fora']).abs()
-    df['soma'] = df['gols_casa'] + df['gols_fora']
-    top_5 = df.sort_values(by=['dif', 'soma'], ascending=[False, False]).head(5)
+    df_sorted['dif'] = (df_sorted['gols_casa'] - df_sorted['gols_fora']).abs()
+    df_sorted['soma'] = df_sorted['gols_casa'] + df_sorted['gols_fora']
+    top_5 = df_sorted.sort_values(by=['dif', 'soma'], ascending=[False, False]).head(5)
     
-    nik_times = pd.concat([df[df['jogador_casa']=='Nikolas']['time_casa'], df[df['jogador_fora']=='Nikolas']['time_fora']])
-    rod_times = pd.concat([df[df['jogador_casa']=='Rodrigo']['time_casa'], df[df['jogador_fora']=='Rodrigo']['time_fora']])
+    nik_times = pd.concat([df_sorted[df_sorted['jogador_casa']=='Nikolas']['time_casa'], df_sorted[df_sorted['jogador_fora']=='Nikolas']['time_fora']])
+    rod_times = pd.concat([df_sorted[df_sorted['jogador_casa']=='Rodrigo']['time_casa'], df_sorted[df_sorted['jogador_fora']=='Rodrigo']['time_fora']])
     
-    total_jogos = len(df)
-    v_nik = len(df[df['vencedor'] == 'Nikolas'])
-    v_rod = len(df[df['vencedor'] == 'Rodrigo'])
-    emp = len(df[df['vencedor'] == 'Empate'])
+    total_jogos = len(df_sorted)
+    v_nik = len(df_sorted[df_sorted['vencedor'] == 'Nikolas'])
+    v_rod = len(df_sorted[df_sorted['vencedor'] == 'Rodrigo'])
+    emp = len(df_sorted[df_sorted['vencedor'] == 'Empate'])
     
-    g_nik = df[df['jogador_casa']=='Nikolas']['gols_casa'].sum() + df[df['jogador_fora']=='Nikolas']['gols_fora'].sum()
-    g_rod = df[df['jogador_casa']=='Rodrigo']['gols_casa'].sum() + df[df['jogador_fora']=='Rodrigo']['gols_fora'].sum()
-    pen_nik = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Nikolas')])
-    pen_rod = len(df[(df['foi_penaltis'] == 'Sim') & (df['vencedor_penaltis'] == 'Rodrigo')])
-    pen_disputados = len(df[df['foi_penaltis'] == 'Sim'])
+    g_nik = df_sorted[df_sorted['jogador_casa']=='Nikolas']['gols_casa'].sum() + df_sorted[df_sorted['jogador_fora']=='Nikolas']['gols_fora'].sum()
+    g_rod = df_sorted[df_sorted['jogador_casa']=='Rodrigo']['gols_casa'].sum() + df_sorted[df_sorted['jogador_fora']=='Rodrigo']['gols_fora'].sum()
+    pen_nik = len(df_sorted[(df_sorted['foi_penaltis'] == 'Sim') & (df_sorted['vencedor_penaltis'] == 'Nikolas')])
+    pen_rod = len(df_sorted[(df_sorted['foi_penaltis'] == 'Sim') & (df_sorted['vencedor_penaltis'] == 'Rodrigo')])
+    pen_disputados = len(df_sorted[df_sorted['foi_penaltis'] == 'Sim'])
 
     # Cálculo Saldo de Gols nas Vitórias (Amasso)
-    df_v_nik = df[df['vencedor'] == 'Nikolas']
+    df_v_nik = df_sorted[df_sorted['vencedor'] == 'Nikolas']
     media_saldo_nik = df_v_nik['dif'].mean() if not df_v_nik.empty else 0.0
     
-    df_v_rod = df[df['vencedor'] == 'Rodrigo']
+    df_v_rod = df_sorted[df_sorted['vencedor'] == 'Rodrigo']
     media_saldo_rod = df_v_rod['dif'].mean() if not df_v_rod.empty else 0.0
 
     avg_nik = g_nik / total_jogos if total_jogos > 0 else 0
     avg_rod = g_rod / total_jogos if total_jogos > 0 else 0
 
     # -- Lógica dos Badges (Medalhas) --
-    cs_nik = len(df[((df['jogador_casa']=='Nikolas') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Nikolas') & (df['gols_casa']==0))])
-    cs_rod = len(df[((df['jogador_casa']=='Rodrigo') & (df['gols_fora']==0)) | ((df['jogador_fora']=='Rodrigo') & (df['gols_casa']==0))])
+    cs_nik = len(df_sorted[((df_sorted['jogador_casa']=='Nikolas') & (df_sorted['gols_fora']==0)) | ((df_sorted['jogador_fora']=='Nikolas') & (df_sorted['gols_casa']==0))])
+    cs_rod = len(df_sorted[((df_sorted['jogador_casa']=='Rodrigo') & (df_sorted['gols_fora']==0)) | ((df_sorted['jogador_fora']=='Rodrigo') & (df_sorted['gols_casa']==0))])
     
     badges_nik, badges_rod = [], []
     
-    # Rei do FIFA
     is_nik_rei = (v_nik > v_rod) and (avg_nik > avg_rod) and (max_n > max_r) and (media_saldo_nik > media_saldo_rod)
     is_rod_rei = (v_rod > v_nik) and (avg_rod > avg_nik) and (max_r > max_n) and (media_saldo_rod > media_saldo_nik)
 
     if is_nik_rei: badges_nik.append("👑")
     elif is_rod_rei: badges_rod.append("👑")
 
-    # Muralha
     if cs_nik > cs_rod and cs_nik > 0: badges_nik.append("🛡️")
     elif cs_rod > cs_nik and cs_rod > 0: badges_rod.append("🛡️")
-    # Pênaltis
+    
     if pen_disputados > 0:
         tx_nik = pen_nik / pen_disputados
         tx_rod = pen_rod / pen_disputados
         if tx_nik > tx_rod and tx_nik > 0: badges_nik.append("🎯")
         elif tx_rod > tx_nik and tx_rod > 0: badges_rod.append("🎯")
-    # Máquina de Gols
+        
     if avg_nik > avg_rod and avg_nik > 0: badges_nik.append("⚽")
     elif avg_rod > avg_nik and avg_rod > 0: badges_rod.append("⚽")
         
-    # Pato
     if seq_at_p == 'Rodrigo' and seq_at_q >= 10: badges_nik.append("🦆")
     elif seq_at_p == 'Nikolas' and seq_at_q >= 10: badges_rod.append("🦆")
 
-    # Sequência Atual Sem Tomar Gol
     cur_cs_nik, cur_cs_rod = 0, 0
-    for _, row in df.sort_values('id', ascending=False).iterrows():
+    # Percorre de trás pra frente (mais recente para o mais antigo)
+    for _, row in df_sorted.iloc[::-1].iterrows():
         if (row['jogador_casa'] == 'Nikolas' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Nikolas' and row['gols_casa'] == 0): cur_cs_nik += 1
         else: break
-    for _, row in df.sort_values('id', ascending=False).iterrows():
+    for _, row in df_sorted.iloc[::-1].iterrows():
         if (row['jogador_casa'] == 'Rodrigo' and row['gols_fora'] == 0) or (row['jogador_fora'] == 'Rodrigo' and row['gols_casa'] == 0): cur_cs_rod += 1
         else: break
 
@@ -205,11 +208,18 @@ def calcular_estatisticas(df):
         "rod_top_teams": rod_times.value_counts().head(3).to_dict() if not rod_times.empty else {},
         "badges_nik": badges_nik, "badges_rod": badges_rod,
         "cur_cs_nik": cur_cs_nik, "cur_cs_rod": cur_cs_rod,
-        "df_completo": df
+        "df_completo": df_sorted
     }
 
-# Lemos os dados para poder usar as informações no título
+# ==============================================================================
+# CARREGAMENTO GLOBAL DOS DADOS
+# ==============================================================================
 df_partidas = ler_partidas()
+
+if not df_partidas.empty:
+    # Cria a coluna de data oficial logo no início para todo o aplicativo usar
+    df_partidas['data_dt'] = pd.to_datetime(df_partidas['data'], format='mixed', errors='coerce')
+
 stats_globais = calcular_estatisticas(df_partidas)
 
 # ==============================================================================
@@ -231,7 +241,6 @@ with col_title:
         nik_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_nik']]) if stats_globais['badges_nik'] else ""
         rod_badges_html = "".join([f"<span title='{badges_desc.get(b, b)}' style='cursor:help; margin: 0 2px;'>{b}</span>" for b in stats_globais['badges_rod']]) if stats_globais['badges_rod'] else ""
 
-        # HTML COLADO NA MARGEM PARA EVITAR O BUG DE MARKDOWN
         title_html = f"""
 <div style='display: flex; align-items: flex-start; justify-content: flex-start; gap: 15px; font-size: 2.2rem; font-weight: bold; margin-bottom: 10px;'>
     <span style='line-height: 1.2;'>🎮 </span>
@@ -259,7 +268,6 @@ with col_title:
                     else:
                         legend_items += f"<p style='margin: 0 0 8px 0;'>{b} {desc}</p>"
                         
-            # HTML COLADO NA MARGEM
             legend_html = f"""
 <details class="mobile-legend" style="background-color: #1E1E1E; padding: 10px 15px; border-radius: 8px; border: 1px solid #333333; margin-bottom: 15px;">
     <summary style="cursor: pointer; font-weight: bold; color: #E0E0E0; font-size: 14px; outline: none;">ℹ️ Significado das Medalhas</summary>
@@ -278,7 +286,6 @@ with col_login:
     
     if not st.session_state["autenticado"]:
         with st.popover("🔐 Acesso Restrito", use_container_width=True):
-            # Substituído por st.form para o botão aceitar a tecla Enter!
             with st.form("form_login", border=False):
                 senha_digitada = st.text_input("Senha", type="password", placeholder="Digite a senha...", label_visibility="collapsed")
                 btn_entrar = st.form_submit_button("Entrar", use_container_width=True)
@@ -300,142 +307,72 @@ st.markdown("---")
 # DICIONÁRIO DE TIMES E LOGOS
 # ==============================================================================
 TEAMS = {
-    # Premier League
-    "Arsenal": "https://crests.football-data.org/57.png",
-    "Aston Villa": "https://crests.football-data.org/58.png",
-    "Bournemouth": "https://crests.football-data.org/1044.png",
-    "Brentford": "https://crests.football-data.org/402.png",
-    "Brighton": "https://crests.football-data.org/397.png",
-    "Chelsea": "https://crests.football-data.org/61.png",
-    "Crystal Palace": "https://crests.football-data.org/354.png",
-    "Everton": "https://crests.football-data.org/62.png",
-    "Fulham": "https://crests.football-data.org/63.png",
-    "Ipswich Town": "https://crests.football-data.org/349.png",
-    "Leicester City": "https://crests.football-data.org/338.png",
-    "Liverpool": "https://crests.football-data.org/64.png",
-    "Manchester City": "https://crests.football-data.org/65.png",
-    "Manchester United": "https://crests.football-data.org/66.png",
-    "Newcastle United": "https://crests.football-data.org/67.png",
-    "Nottingham Forest": "https://crests.football-data.org/68.png",
-    "Southampton": "https://crests.football-data.org/340.png",
-    "Tottenham Hotspur": "https://crests.football-data.org/73.png",
-    "West Ham United": "https://crests.football-data.org/563.png",
-    "Wolverhampton": "https://crests.football-data.org/76.png",
-
-    # La Liga
-    "Alavés": "https://crests.football-data.org/263.png",
-    "Athletic Club": "https://crests.football-data.org/77.png",
-    "Atlético Madrid": "https://crests.football-data.org/78.png",
-    "Celta de Vigo": "https://crests.football-data.org/558.png",
-    "Espanyol": "https://crests.football-data.org/80.png",
-    "FC Barcelona": "https://crests.football-data.org/81.png",
-    "Getafe": "https://crests.football-data.org/82.png",
-    "Girona": "https://crests.football-data.org/298.png",
-    "Las Palmas": "https://crests.football-data.org/275.png",
-    "Leganés": "https://crests.football-data.org/745.png",
-    "Mallorca": "https://crests.football-data.org/89.png",
-    "Osasuna": "https://crests.football-data.org/79.png",
-    "Rayo Vallecano": "https://crests.football-data.org/87.png",
-    "Real Betis": "https://crests.football-data.org/90.png",
-    "Real Madrid": "https://crests.football-data.org/86.png",
-    "Real Sociedad": "https://crests.football-data.org/92.png",
-    "Real Valladolid": "https://crests.football-data.org/250.png",
-    "Sevilla FC": "https://crests.football-data.org/559.png",
-    "Valencia CF": "https://crests.football-data.org/95.png",
-    "Villarreal CF": "https://crests.football-data.org/94.png",
-
-    # Serie A
-    "Atalanta": "https://crests.football-data.org/102.png",
-    "Bologna": "https://crests.football-data.org/103.png",
-    "Cagliari": "https://crests.football-data.org/104.png",
-    "Como": "https://crests.football-data.org/105.png",
-    "Empoli": "https://crests.football-data.org/107.png",
-    "Fiorentina": "https://crests.football-data.org/99.png",
-    "Genoa": "https://crests.football-data.org/106.png",
-    "Inter de Milão": "https://crests.football-data.org/108.png",
-    "Juventus": "https://crests.football-data.org/109.png",
-    "Lazio": "https://crests.football-data.org/110.png",
-    "Lecce": "https://crests.football-data.org/112.png",
-    "Milan": "https://crests.football-data.org/98.png",
-    "Monza": "https://crests.football-data.org/5911.png",
-    "Napoli": "https://crests.football-data.org/113.png",
-    "Parma": "https://crests.football-data.org/115.png",
-    "Roma": "https://crests.football-data.org/100.png",
-    "Torino": "https://crests.football-data.org/586.png",
-    "Udinese": "https://crests.football-data.org/115.png",
-    "Venezia": "https://crests.football-data.org/117.png",
-    "Verona": "https://crests.football-data.org/450.png",
-
-    # Bundesliga
-    "Bayer Leverkusen": "https://crests.football-data.org/3.png",
-    "Bayern de Munique": "https://crests.football-data.org/5.png",
-    "Borussia Dortmund": "https://crests.football-data.org/4.png",
-    "Borussia M'gladbach": "https://crests.football-data.org/18.png",
-    "Eintracht Frankfurt": "https://crests.football-data.org/19.png",
-    "Freiburg": "https://crests.football-data.org/17.png",
-    "Heidenheim": "https://crests.football-data.org/44.png",
-    "Hoffenheim": "https://crests.football-data.org/2.png",
-    "Holstein Kiel": "https://crests.football-data.org/32.png",
-    "Mainz 05": "https://crests.football-data.org/15.png",
-    "RB Leipzig": "https://crests.football-data.org/721.png",
-    "St. Pauli": "https://crests.football-data.org/35.png",
-    "Stuttgart": "https://crests.football-data.org/10.png",
-    "Werder Bremen": "https://crests.football-data.org/12.png",
+    "Arsenal": "https://crests.football-data.org/57.png", "Aston Villa": "https://crests.football-data.org/58.png",
+    "Bournemouth": "https://crests.football-data.org/1044.png", "Brentford": "https://crests.football-data.org/402.png",
+    "Brighton": "https://crests.football-data.org/397.png", "Chelsea": "https://crests.football-data.org/61.png",
+    "Crystal Palace": "https://crests.football-data.org/354.png", "Everton": "https://crests.football-data.org/62.png",
+    "Fulham": "https://crests.football-data.org/63.png", "Ipswich Town": "https://crests.football-data.org/349.png",
+    "Leicester City": "https://crests.football-data.org/338.png", "Liverpool": "https://crests.football-data.org/64.png",
+    "Manchester City": "https://crests.football-data.org/65.png", "Manchester United": "https://crests.football-data.org/66.png",
+    "Newcastle United": "https://crests.football-data.org/67.png", "Nottingham Forest": "https://crests.football-data.org/68.png",
+    "Southampton": "https://crests.football-data.org/340.png", "Tottenham Hotspur": "https://crests.football-data.org/73.png",
+    "West Ham United": "https://crests.football-data.org/563.png", "Wolverhampton": "https://crests.football-data.org/76.png",
+    "Alavés": "https://crests.football-data.org/263.png", "Athletic Club": "https://crests.football-data.org/77.png",
+    "Atlético Madrid": "https://crests.football-data.org/78.png", "Celta de Vigo": "https://crests.football-data.org/558.png",
+    "Espanyol": "https://crests.football-data.org/80.png", "FC Barcelona": "https://crests.football-data.org/81.png",
+    "Getafe": "https://crests.football-data.org/82.png", "Girona": "https://crests.football-data.org/298.png",
+    "Las Palmas": "https://crests.football-data.org/275.png", "Leganés": "https://crests.football-data.org/745.png",
+    "Mallorca": "https://crests.football-data.org/89.png", "Osasuna": "https://crests.football-data.org/79.png",
+    "Rayo Vallecano": "https://crests.football-data.org/87.png", "Real Betis": "https://crests.football-data.org/90.png",
+    "Real Madrid": "https://crests.football-data.org/86.png", "Real Sociedad": "https://crests.football-data.org/92.png",
+    "Real Valladolid": "https://crests.football-data.org/250.png", "Sevilla FC": "https://crests.football-data.org/559.png",
+    "Valencia CF": "https://crests.football-data.org/95.png", "Villarreal CF": "https://crests.football-data.org/94.png",
+    "Atalanta": "https://crests.football-data.org/102.png", "Bologna": "https://crests.football-data.org/103.png",
+    "Cagliari": "https://crests.football-data.org/104.png", "Como": "https://crests.football-data.org/105.png",
+    "Empoli": "https://crests.football-data.org/107.png", "Fiorentina": "https://crests.football-data.org/99.png",
+    "Genoa": "https://crests.football-data.org/106.png", "Inter de Milão": "https://crests.football-data.org/108.png",
+    "Juventus": "https://crests.football-data.org/109.png", "Lazio": "https://crests.football-data.org/110.png",
+    "Lecce": "https://crests.football-data.org/112.png", "Milan": "https://crests.football-data.org/98.png",
+    "Monza": "https://crests.football-data.org/5911.png", "Napoli": "https://crests.football-data.org/113.png",
+    "Parma": "https://crests.football-data.org/115.png", "Roma": "https://crests.football-data.org/100.png",
+    "Torino": "https://crests.football-data.org/586.png", "Udinese": "https://crests.football-data.org/115.png",
+    "Venezia": "https://crests.football-data.org/117.png", "Verona": "https://crests.football-data.org/450.png",
+    "Bayer Leverkusen": "https://crests.football-data.org/3.png", "Bayern de Munique": "https://crests.football-data.org/5.png",
+    "Borussia Dortmund": "https://crests.football-data.org/4.png", "Borussia M'gladbach": "https://crests.football-data.org/18.png",
+    "Eintracht Frankfurt": "https://crests.football-data.org/19.png", "Freiburg": "https://crests.football-data.org/17.png",
+    "Heidenheim": "https://crests.football-data.org/44.png", "Hoffenheim": "https://crests.football-data.org/2.png",
+    "Holstein Kiel": "https://crests.football-data.org/32.png", "Mainz 05": "https://crests.football-data.org/15.png",
+    "RB Leipzig": "https://crests.football-data.org/721.png", "St. Pauli": "https://crests.football-data.org/35.png",
+    "Stuttgart": "https://crests.football-data.org/10.png", "Werder Bremen": "https://crests.football-data.org/12.png",
     "Wolfsburg": "https://crests.football-data.org/11.png",
-
-    # Ligue 1
-    "Auxerre": "https://crests.football-data.org/510.png",
-    "Angers": "https://crests.football-data.org/532.png",
-    "AS Monaco": "https://crests.football-data.org/548.png",
-    "Brest": "https://crests.football-data.org/512.png",
-    "Le Havre": "https://crests.football-data.org/533.png",
-    "Lens": "https://crests.football-data.org/546.png",
-    "Lille": "https://crests.football-data.org/521.png",
-    "Lyon": "https://crests.football-data.org/523.png",
-    "Marseille": "https://crests.football-data.org/516.png",
-    "Montpellier": "https://crests.football-data.org/518.png",
-    "Nantes": "https://crests.football-data.org/543.png",
-    "Nice": "https://crests.football-data.org/522.png",
-    "Paris SG": "https://crests.football-data.org/524.png",
-    "Reims": "https://crests.football-data.org/547.png",
-    "Rennes": "https://crests.football-data.org/529.png",
-    "Saint-Étienne": "https://crests.football-data.org/527.png",
-    "Strasbourg": "https://crests.football-data.org/576.png",
-    "Toulouse": "https://crests.football-data.org/511.png",
-
-    # Liga Portugal
-    "Braga": "https://crests.football-data.org/560.png",
-    "FC Porto": "https://crests.football-data.org/503.png",
-    "Gil Vicente": "https://crests.football-data.org/5568.png",
-    "Guimarães": "https://crests.football-data.org/5543.png",
+    "Auxerre": "https://crests.football-data.org/510.png", "Angers": "https://crests.football-data.org/532.png",
+    "AS Monaco": "https://crests.football-data.org/548.png", "Brest": "https://crests.football-data.org/512.png",
+    "Le Havre": "https://crests.football-data.org/533.png", "Lens": "https://crests.football-data.org/546.png",
+    "Lille": "https://crests.football-data.org/521.png", "Lyon": "https://crests.football-data.org/523.png",
+    "Marseille": "https://crests.football-data.org/516.png", "Montpellier": "https://crests.football-data.org/518.png",
+    "Nantes": "https://crests.football-data.org/543.png", "Nice": "https://crests.football-data.org/522.png",
+    "Paris SG": "https://crests.football-data.org/524.png", "Reims": "https://crests.football-data.org/547.png",
+    "Rennes": "https://crests.football-data.org/529.png", "Saint-Étienne": "https://crests.football-data.org/527.png",
+    "Strasbourg": "https://crests.football-data.org/576.png", "Toulouse": "https://crests.football-data.org/511.png",
+    "Braga": "https://crests.football-data.org/560.png", "FC Porto": "https://crests.football-data.org/503.png",
+    "Gil Vicente": "https://crests.football-data.org/5568.png", "Guimarães": "https://crests.football-data.org/5543.png",
     "SL Benfica": "https://crests.football-data.org/1903.png",
     "Sporting CP": "https://upload.wikimedia.org/wikipedia/pt/thumb/3/3e/Sporting_Clube_de_Portugal.png/120px-Sporting_Clube_de_Portugal.png",
-
-    # Eredivisie
     "Ajax": "https://crests.football-data.org/678.png",
     "AZ Alkmaar": "https://upload.wikimedia.org/wikipedia/pt/thumb/e/e0/AZ_Alkmaar.svg/250px-AZ_Alkmaar.svg.png",
-    "Feyenoord": "https://crests.football-data.org/675.png",
-    "PSV Eindhoven": "https://crests.football-data.org/682.png",
+    "Feyenoord": "https://crests.football-data.org/675.png", "PSV Eindhoven": "https://crests.football-data.org/682.png",
     "Twente": "https://crests.football-data.org/666.png",
-
-    # Outros
     "Al Ahli": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b5/Al-Ahli_Saudi_FC_logo.svg/200px-Al-Ahli_Saudi_FC_logo.svg.png",
     "Al Hilal": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Al_Hilal_SFC_Logo.svg/120px-Al_Hilal_SFC_Logo.svg.png",
-    "Al Ittihad": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a3/Al-Ittihad_Club_%2Saudi_Arabia%29_logo.svg/200px-Al-Ittihad_Club_%2Saudi_Arabia%29_logo.svg.png",
+    "Al Ittihad": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a3/Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg/200px-Al-Ittihad_Club_%28Saudi_Arabia%29_logo.svg.png",
     "Al Nassr": "https://upload.wikimedia.org/wikipedia/en/3/3f/Nassr_FC_Logo.svg",
-    "Boca Juniors": "https://crests.football-data.org/1127.png",
-    "River Plate": "https://crests.football-data.org/1128.png",
+    "Boca Juniors": "https://crests.football-data.org/1127.png", "River Plate": "https://crests.football-data.org/1128.png",
     "Inter Miami CF": "https://upload.wikimedia.org/wikipedia/pt/thumb/c/c1/Inter_Miami_CF.png/250px-Inter_Miami_CF.png",
     "LA Galaxy": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1a/LA_Galaxy_logo.svg/200px-LA_Galaxy_logo.svg.png",
     "Los Angeles FC": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Los_Angeles_FC_logo.svg/200px-Los_Angeles_FC_logo.svg.png",
-    "Galatasaray": "https://crests.football-data.org/611.png",
-    "Fenerbahçe": "https://crests.football-data.org/610.png",
-    
-    # Brasileiro
+    "Galatasaray": "https://crests.football-data.org/611.png", "Fenerbahçe": "https://crests.football-data.org/610.png",
     "Internacional":"https://logodetimes.com/times/internacional/logo-internacional-4096.png",
     "Grêmio":"https://logodetimes.com/times/gremio/logo-gremio-4096.png",
-    
-    # Seleções
     "Itália": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Logo_Italy_National_Football_Team_-_2023.svg/120px-Logo_Italy_National_Football_Team_-_2023.svg.png",
     "Brasil": "https://logodetimes.com/times/selecao-brasileira-brasil-novo-logo-2019-com-estrelas-e-nome/logo-selecao-brasileira-brasil-novo-logo-2019-com-estrelas-e-nome-4096.png",
     "Portugal": "https://upload.wikimedia.org/wikipedia/pt/7/75/Portugal_FPF.png",
@@ -513,7 +450,7 @@ with tab1:
 
             # GRÁFICO DE CORRIDA DOS CAMPEÕES
             st.markdown("### 📈 Evolução de Vitórias")
-            df_chart = stats['df_completo'].copy().sort_values('id')
+            df_chart = stats['df_completo'].copy() # <- Já vem ordenado do nosso novo calcular_estatisticas
             df_chart['Vitórias Nikolas'] = (df_chart['vencedor'] == 'Nikolas').cumsum()
             df_chart['Vitórias Rodrigo'] = (df_chart['vencedor'] == 'Rodrigo').cumsum()
             df_chart['Partida'] = range(1, len(df_chart) + 1)
@@ -608,22 +545,22 @@ with tab1:
             
             with c_t1:
                 st.markdown("**Top 3 - Nikolas**")
-                for time_nome, count in stats['nik_top_teams'].items():
+                for time, count in stats['nik_top_teams'].items():
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
-                        f"<img src='{TEAMS.get(time_nome)}' style='width: 25px; height: 25px; object-fit: contain;'>"
-                        f"<span><b>{time_nome}</b> ({count} jogos)</span>"
+                        f"<img src='{TEAMS.get(time)}' style='width: 25px; height: 25px; object-fit: contain;'>"
+                        f"<span><b>{time}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
                     
             with c_t2:
                 st.markdown("**Top 3 - Rodrigo**")
-                for time_nome, count in stats['rod_top_teams'].items():
+                for time, count in stats['rod_top_teams'].items():
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
-                        f"<img src='{TEAMS.get(time_nome)}' style='width: 25px; height: 25px; object-fit: contain;'>"
-                        f"<span><b>{time_nome}</b> ({count} jogos)</span>"
+                        f"<img src='{TEAMS.get(time)}' style='width: 25px; height: 25px; object-fit: contain;'>"
+                        f"<span><b>{time}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
@@ -709,14 +646,11 @@ if tab2:
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Salvar partida 💾", use_container_width=True):
             try:
-                # O comando mágico para ele tentar salvar
                 salvar_partida(v_jogo, str(d_j), jogador_casa, t_c, int(g_c), jogador_fora, int(g_f), t_f, foi_p, venc_p)
-                # Trocamos para um Toast que fica visível, com um delay de 1 segundinho
                 st.toast("Partida gravada com sucesso!", icon="✅")
                 time.sleep(1)
                 st.rerun()
             except Exception as e:
-                # SE TIVER ALGO ERRADO NAS SUAS COLUNAS DO BANCO, VAI APARECER AQUI!
                 st.error(f"❌ Erro ao salvar no banco. O nome das colunas está correto? O Supabase disse: {e}")
 
 # ----------------- TAB 3: HISTÓRICO (Híbrido) -----------------
@@ -724,9 +658,6 @@ with tab3:
     st.subheader("📜 Histórico de Jogos")
     
     if not df_partidas.empty:
-        # Arrumamos essa linha também pra não travar com datas gringas perdidas!
-        df_partidas['data_dt'] = pd.to_datetime(df_partidas['data'], format='mixed', errors='coerce')
-        
         c_tog, c_dat, _ = st.columns([1.5, 3, 3])
         with c_tog:
             st.markdown("<br>", unsafe_allow_html=True)
@@ -756,9 +687,12 @@ with tab3:
         else:
             st.markdown("<br>", unsafe_allow_html=True)
 
+        # A MÁGICA DA ORDENAÇÃO: Força o Pandas a ordenar da data mais nova para a mais antiga.
+        # Usa o 'id' como desempate se os jogos tiverem a mesma data!
+        df_historico = df_historico.sort_values(by=['data_dt', 'id'], ascending=[False, False])
+
         if not df_historico.empty:
-            for _, row in df_historico.iloc[::-1].iterrows():
-                # Formata a data se for válida, senão põe "N/A"
+            for _, row in df_historico.iterrows():
                 if pd.notna(row['data_dt']):
                     data_br = row['data_dt'].strftime("%d/%m/%Y")
                 else:
@@ -773,7 +707,6 @@ with tab3:
                     c_hist, c_del = st.columns([9.5, 0.5])
                     
                     with c_hist:
-                        # BLOCO HTML SEM IDENTAÇÃO (MARGEM ESQUERDA) PARA EVITAR BUG DO MARKDOWN
                         html_hist = f"""
 <div style="width: 100%; padding: 5px 0;">
 <div style="margin-bottom: 10px;">
