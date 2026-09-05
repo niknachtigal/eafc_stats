@@ -50,7 +50,7 @@ if "autenticado" not in st.session_state:
 # ==============================================================================
 # CONEXÃO COM SUPABASE
 # ==============================================================================
-@st.cache_data(ttl=10)
+@st.cache_data
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
     key = st.secrets["SUPABASE_KEY"]
@@ -58,7 +58,7 @@ def init_connection():
 
 supabase = init_connection()
 
-@st.cache_data
+@st.cache_data(ttl=10)
 def ler_partidas():
     try:
         response = supabase.table("partidas").select("*").execute()
