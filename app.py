@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import time
 from supabase import create_client, Client
 
 # Configuração da página
@@ -57,6 +58,18 @@ def init_connection():
 
 supabase = init_connection()
 
+# MEMÓRIA INTELIGENTE: Puxa do banco 1 vez só, deixando rápido
+@st.cache_data
+def ler_partidas():
+    try:
+        response = supabase.table("partidas").select("*").execute()
+        if response.data:
+            return pd.DataFrame(response.data)
+    except Exception as e:
+        st.error(f"Erro de conexão: {e}")
+        
+    return pd.DataFrame(columns=["id", "versao_jogo", "data", "jogador_casa", "time_casa", "gols_casa", "jogador_fora", "gols_fora", "time_fora", "foi_penaltis", "vencedor_penaltis"])
+
 def salvar_partida(versao_jogo, data, j_casa, t_casa, g_casa, j_fora, g_fora, t_fora, foi_pen, venc_pen):
     nova_partida = {
         "versao_jogo": versao_jogo,
@@ -71,16 +84,11 @@ def salvar_partida(versao_jogo, data, j_casa, t_casa, g_casa, j_fora, g_fora, t_
         "vencedor_penaltis": venc_pen
     }
     supabase.table("partidas").insert(nova_partida).execute()
+    st.cache_data.clear() # <- O SEGREDO: Limpa a memória pra mostrar o jogo novo na hora!
 
 def excluir_partida(partida_id):
     supabase.table("partidas").delete().eq("id", partida_id).execute()
-
-def ler_partidas():
-    response = supabase.table("partidas").select("*").execute()
-    if response.data:
-        return pd.DataFrame(response.data)
-    else:
-        return pd.DataFrame(columns=["id", "versao_jogo", "data", "jogador_casa", "time_casa", "gols_casa", "jogador_fora", "gols_fora", "time_fora", "foi_penaltis", "vencedor_penaltis"])
+    st.cache_data.clear() # <- Limpa a memória também ao deletar
 
 # ==============================================================================
 # LÓGICA DE VITÓRIAS E GAMIFICAÇÃO
@@ -600,22 +608,22 @@ with tab1:
             
             with c_t1:
                 st.markdown("**Top 3 - Nikolas**")
-                for time, count in stats['nik_top_teams'].items():
+                for time_nome, count in stats['nik_top_teams'].items():
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
-                        f"<img src='{TEAMS.get(time)}' style='width: 25px; height: 25px; object-fit: contain;'>"
-                        f"<span><b>{time}</b> ({count} jogos)</span>"
+                        f"<img src='{TEAMS.get(time_nome)}' style='width: 25px; height: 25px; object-fit: contain;'>"
+                        f"<span><b>{time_nome}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
                     
             with c_t2:
                 st.markdown("**Top 3 - Rodrigo**")
-                for time, count in stats['rod_top_teams'].items():
+                for time_nome, count in stats['rod_top_teams'].items():
                     st.markdown(
                         f"<div style='display: flex; align-items: center; gap: 10px; margin-bottom: 5px;'>"
-                        f"<img src='{TEAMS.get(time)}' style='width: 25px; height: 25px; object-fit: contain;'>"
-                        f"<span><b>{time}</b> ({count} jogos)</span>"
+                        f"<img src='{TEAMS.get(time_nome)}' style='width: 25px; height: 25px; object-fit: contain;'>"
+                        f"<span><b>{time_nome}</b> ({count} jogos)</span>"
                         f"</div>", 
                         unsafe_allow_html=True
                     )
@@ -700,16 +708,24 @@ if tab2:
 
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("Salvar partida 💾", use_container_width=True):
-            salvar_partida(v_jogo, str(d_j), jogador_casa, t_c, int(g_c), jogador_fora, int(g_f), t_f, foi_p, venc_p)
-            st.success("Gravado!")
-            st.rerun()
+            try:
+                # O comando mágico para ele tentar salvar
+                salvar_partida(v_jogo, str(d_j), jogador_casa, t_c, int(g_c), jogador_fora, int(g_f), t_f, foi_p, venc_p)
+                # Trocamos para um Toast que fica visível, com um delay de 1 segundinho
+                st.toast("Partida gravada com sucesso!", icon="✅")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                # SE TIVER ALGO ERRADO NAS SUAS COLUNAS DO BANCO, VAI APARECER AQUI!
+                st.error(f"❌ Erro ao salvar no banco. O nome das colunas está correto? O Supabase disse: {e}")
 
 # ----------------- TAB 3: HISTÓRICO (Híbrido) -----------------
 with tab3:
     st.subheader("📜 Histórico de Jogos")
     
     if not df_partidas.empty:
-        df_partidas['data_dt'] = pd.to_datetime(df_partidas['data'])
+        # Arrumamos essa linha também pra não travar com datas gringas perdidas!
+        df_partidas['data_dt'] = pd.to_datetime(df_partidas['data'], format='mixed', errors='coerce')
         
         c_tog, c_dat, _ = st.columns([1.5, 3, 3])
         with c_tog:
@@ -742,7 +758,12 @@ with tab3:
 
         if not df_historico.empty:
             for _, row in df_historico.iloc[::-1].iterrows():
-                data_br = row['data_dt'].strftime("%d/%m/%Y")
+                # Formata a data se for válida, senão põe "N/A"
+                if pd.notna(row['data_dt']):
+                    data_br = row['data_dt'].strftime("%d/%m/%Y")
+                else:
+                    data_br = "N/A"
+                    
                 tc = row['time_casa']
                 tf = row['time_fora']
                 
