@@ -50,7 +50,7 @@ if "autenticado" not in st.session_state:
 # ==============================================================================
 # CONEXÃO COM SUPABASE
 # ==============================================================================
-@st.cache_resource
+@st.cache_data(ttl=10)
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
     key = st.secrets["SUPABASE_KEY"]
