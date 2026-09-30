@@ -482,11 +482,9 @@ with tab1:
             c_gol1, c_gol2 = st.columns(2)
             with c_gol1:
                 st.metric("Média de Saldo nas Vitórias (Nikolas)", f"+{media_saldo_nik:.1f} gols")
-                if media_saldo_nik > media_saldo_rod and media_saldo_nik > 0:
             with c_gol2:
                 st.metric("Média de Saldo nas Vitórias (Rodrigo)", f"+{media_saldo_rod:.1f} gols")
-                if media_saldo_rod > media_saldo_nik and media_saldo_rod > 0:
-                    
+                                    
 
             # --- RAIO-X DE CLÁSSICOS & KRYPTONITA ---
             st.markdown("---")
