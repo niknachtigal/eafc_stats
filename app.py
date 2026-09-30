@@ -484,7 +484,7 @@ with tab1:
                 st.metric("Média de Saldo nas Vitórias (Nikolas)", f"+{media_saldo_nik:.1f} gols")
             with c_gol2:
                 st.metric("Média de Saldo nas Vitórias (Rodrigo)", f"+{media_saldo_rod:.1f} gols")
-                )
+            
 
             # --- RAIO-X DE CLÁSSICOS & KRYPTONITA ---
             st.markdown("---")
