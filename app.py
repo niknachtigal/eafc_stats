@@ -50,7 +50,6 @@ if "autenticado" not in st.session_state:
 # ==============================================================================
 # CONEXÃO COM SUPABASE
 # ==============================================================================
-# 👇 AQUI ESTAVA O ERRO! CORRIGIDO PARA cache_resource 👇
 @st.cache_resource
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
@@ -163,8 +162,9 @@ def calcular_estatisticas(df):
     
     badges_nik, badges_rod = [], []
     
-    is_nik_rei = (v_nik > v_rod) and (avg_nik > avg_rod) and (max_n > max_r) and (media_saldo_nik > media_saldo_rod)
-    is_rod_rei = (v_rod > v_nik) and (avg_rod > avg_nik) and (max_r > max_n) and (media_saldo_rod > media_saldo_nik)
+    # NOVAS REGRAS DO REI DO FIFA (Min. 50 jogos e pelo menos uma sequencia de 10 vitórias)
+    is_nik_rei = (total_jogos >= 50) and (max_n >= 10) and (v_nik > v_rod) and (avg_nik > avg_rod) and (max_n > max_r) and (media_saldo_nik > media_saldo_rod)
+    is_rod_rei = (total_jogos >= 50) and (max_r >= 10) and (v_rod > v_nik) and (avg_rod > avg_nik) and (max_r > max_n) and (media_saldo_rod > media_saldo_nik)
 
     if is_nik_rei: badges_nik.append("👑")
     elif is_rod_rei: badges_rod.append("👑")
@@ -233,7 +233,7 @@ with col_title:
         seq_perdedor = stats_globais['seq_at_q']
         
         badges_desc = {
-            "👑": "Rei do Fifa: Maior número de vitórias, média de gols, sequência histórica de vitórias, saldo de gols nas vitórias",        
+            "👑": "Rei do Fifa: Maior número de vitórias, média de gols, sequência histórica de vitórias, saldo de gols nas vitórias (Requer mín. 50 jogos e 1x 10 vitórias seguidas).",        
             "🛡️": "Muralha: Maior número de jogos sem sofrer gols",
             "🎯": "Frio e Calculista: Maior taxa de vitória nos pênaltis",
             "⚽": "Máquina de Gols: Maior média de gols marcados",
@@ -451,7 +451,7 @@ with tab1:
 
             # GRÁFICO DE CORRIDA DOS CAMPEÕES
             st.markdown("### 📈 Evolução de Vitórias")
-            df_chart = stats['df_completo'].copy()
+            df_chart = stats['df_completo'].copy() # <- Já vem ordenado do nosso novo calcular_estatisticas
             df_chart['Vitórias Nikolas'] = (df_chart['vencedor'] == 'Nikolas').cumsum()
             df_chart['Vitórias Rodrigo'] = (df_chart['vencedor'] == 'Rodrigo').cumsum()
             df_chart['Partida'] = range(1, len(df_chart) + 1)
@@ -484,7 +484,7 @@ with tab1:
                 st.metric("Média de Saldo nas Vitórias (Nikolas)", f"+{media_saldo_nik:.1f} gols")
             with c_gol2:
                 st.metric("Média de Saldo nas Vitórias (Rodrigo)", f"+{media_saldo_rod:.1f} gols")
-                                    
+                )
 
             # --- RAIO-X DE CLÁSSICOS & KRYPTONITA ---
             st.markdown("---")
@@ -505,6 +505,7 @@ with tab1:
             krypto_rod = times_nik_venceu.value_counts().idxmax() if not times_nik_venceu.empty else "Nenhum"
             
             
+
             st.markdown("<br><b>Filtrar um Clássico Específico:</b>", unsafe_allow_html=True)
             c_rx1, c_rx2 = st.columns(2)
             lista_de_times = list(TEAMS.keys())
